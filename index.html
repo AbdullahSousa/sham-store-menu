@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sham Store — Menu</title>
+  <style>
+    /* ============================================================
+       THEME — Sham sage-green (mirrors the Flutter kiosk app_theme)
+       ============================================================ */
+    :root {
+      --bg:#F5F0E8; --surface:#FFFFFF; --ink:#2A2A2A; --muted:#6f6a5f;
+      --primary:#4D6B47; --secondary:#3A5235; --accent:#8FAF7A; --sale:#D9534F;
+      --line:#e5dfd1; --card-sh:rgba(60,60,40,.10);
+      --wa:#25d366; --wa-dk:#1da851; --danger:#c0392b; --radius:16px; --header-h:62px;
+    }
+    :root[data-theme="dark"] {
+      --bg:#1A2318; --surface:#243022; --ink:#D4E8CF; --muted:#9fb298;
+      --primary:#8FAF7A; --secondary:#6B9460; --accent:#8FAF7A; --sale:#E06B67;
+      --line:#33452f; --card-sh:rgba(0,0,0,.35); --danger:#e57368;
+    }
+    :root { --app-grad: linear-gradient(90deg, #152718 0%, #3A5235 55%, #4D6B47 100%); }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin:0; padding:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
+      background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    /* ============ HEADER ============ */
+    header { position: sticky; top: 0; z-index: 40; background: var(--app-grad); color:#fff; box-shadow: 0 3px 14px rgba(20,30,15,.28); }
+    .header-inner { min-height:var(--header-h); padding:10px 14px; display:flex; align-items:center; gap:10px; }
+    .brand { flex:none; display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none; -webkit-user-select:none; background:rgba(255,255,255,.94); border-radius:10px; padding:6px 11px; box-shadow:0 3px 8px rgba(0,0,0,.18); }
+    .brand .logo { font-size:1.25rem; line-height:1; }
+    .brand .wordmark { font-weight:800; color:var(--secondary); font-size:1.05rem; letter-spacing:.2px; }
+    .brand .wordmark small { display:block; font-size:.58rem; font-weight:600; opacity:.7; letter-spacing:2px; }
+    .icon-btn { flex:none; position:relative; background:rgba(255,255,255,.15); border:none; color:#fff; width:42px; height:42px; border-radius:12px; font-size:1.2rem; cursor:pointer; display:grid; place-items:center; transition:background .2s ease, transform .1s ease; }
+    .icon-btn:hover { background:rgba(255,255,255,.28); } .icon-btn:active { transform:scale(.93); }
+    .lang-btn { flex:none; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff; height:42px; min-width:44px; padding:0 12px; border-radius:21px; font-weight:800; font-size:.95rem; cursor:pointer; }
+    .lang-btn:hover { background:rgba(255,255,255,.28); }
+    .badge { position:absolute; top:-5px; right:-5px; min-width:21px; height:21px; padding:0 6px; background:var(--sale); color:#fff; font-size:.72rem; font-weight:700; border-radius:999px; display:grid; place-items:center; border:2px solid #2f4a2a; transform:scale(0); transition:transform .18s cubic-bezier(.3,1.4,.5,1); }
+    .badge.show { transform:scale(1); }
+    @media (max-width:420px){ .brand .wordmark { display:none; } .brand { padding:6px 9px; } }
+
+    /* ============ HEADER SEARCH — collapsible glass pill ============ */
+    .search-box {
+      position:relative;
+      flex:0 0 44px; min-width:0; max-width:44px; margin:0 auto;
+      display:flex; align-items:center; gap:9px; height:44px;
+      padding:0 13px;
+      background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.4);
+      border-radius:999px;
+      overflow:hidden;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 6px 16px rgba(0,0,0,.15);
+      transition:flex-grow .45s cubic-bezier(.4,0,.2,1), flex-basis .45s cubic-bezier(.4,0,.2,1), max-width .45s cubic-bezier(.4,0,.2,1), background .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .search-box.open { flex:1 1 0; max-width:480px; }
+    .search-box:focus-within { border-color:rgba(255,255,255,.7); box-shadow:0 0 0 4px rgba(143,175,122,.35), 0 6px 16px rgba(0,0,0,.15); }
+    .search-icon { flex:none; display:flex; align-items:center; justify-content:center; background:none; border:none; padding:0; margin:0; color:rgba(255,255,255,.85); cursor:pointer; transition:color .2s ease; }
+    .search-icon svg { width:19px; height:19px; }
+    .search-box:focus-within .search-icon, .search-box.open .search-icon { color:#fff; }
+    .search-box input { flex:1; min-width:0; width:0; background:none; border:none; outline:none; color:#fff; font-size:.95rem; font-weight:300; letter-spacing:.5px; font-family:inherit; opacity:0; transition:opacity .25s ease .1s; }
+    .search-box.open input { width:auto; opacity:1; }
+    .search-box input::placeholder { color:rgba(255,255,255,.75); font-weight:300; }
+
+    /* ============ ADS / PROMO CAROUSEL ============ */
+    .promo-track { direction:ltr; display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 16px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .promo-track::-webkit-scrollbar { display:none; }
+    .promo-card { scroll-snap-align:center; flex:0 0 78%; max-width:520px; height:200px; border-radius:18px; position:relative; overflow:hidden; cursor:pointer; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.18); background-size:cover; background-position:center; }
+    @media (min-width:620px){ .promo-card { flex-basis:60%; } }
+    @media (min-width:900px){ .promo-card { flex-basis:42%; } }
+    .promo-card .overlay-grad { position:absolute; inset:0; background:linear-gradient(180deg, transparent 30%, rgba(0,0,0,.45) 100%); }
+    .promo-card .p-body { position:absolute; inset:0; padding:16px; display:flex; flex-direction:column; }
+    .promo-card .p-icon { align-self:flex-start; background:rgba(255,255,255,.22); border-radius:10px; padding:6px 8px; font-size:1.05rem; }
+    .promo-card .p-title { margin-top:auto; font-size:1.25rem; font-weight:800; text-shadow:0 2px 5px rgba(0,0,0,.4); }
+    .promo-card .p-sub { font-size:.82rem; opacity:.92; margin-top:2px; }
+    .promo-card .p-pill { align-self:flex-start; margin-top:10px; background:#fff; border-radius:20px; padding:6px 14px; font-size:.78rem; font-weight:800; }
+    body[data-lang="ar"] .promo-card .p-title, body[data-lang="ar"] .promo-card .p-sub { text-align:right; }
+    body[data-lang="ar"] .promo-card .p-icon, body[data-lang="ar"] .promo-card .p-pill { align-self:flex-end; }
+
+    /* ============ CATEGORY TAB BAR ============ */
+    .tabbar { position:sticky; top:var(--header-h); z-index:30; display:flex; gap:2px; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--line); padding:0 8px; scrollbar-width:none; }
+    .tabbar::-webkit-scrollbar { display:none; }
+    .tab { flex:none; background:none; border:none; padding:13px 14px; font-weight:700; font-size:.9rem; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+    .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+    /* ============ MENU ============ */
+    main { padding:6px 16px 120px; }
+    .cat-section { display:none; margin-top:22px; scroll-margin-top:108px; }
+    .cat-section.show { display:block; }
+    .cat-title { font-size:1.15rem; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); color:var(--secondary); }
+    :root[data-theme="dark"] .cat-title { color:var(--ink); }
+    .grid { display:grid; gap:14px; grid-template-columns:repeat(2,1fr); }
+    @media (min-width:560px){ .grid { grid-template-columns:repeat(3,1fr); } }
+    @media (min-width:900px){ .grid { grid-template-columns:repeat(4,1fr); } }
+    .card { cursor:pointer; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 8px var(--card-sh); transition:transform .15s ease, box-shadow .2s ease; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 8px 22px var(--card-sh); }
+    .thumb { aspect-ratio:1/1; display:grid; place-items:center; font-size:2.6rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
+    .thumb img { width:100%; height:100%; object-fit:cover; }
+    .card .body { padding:11px 12px 13px; display:flex; flex-direction:column; gap:5px; flex:1; }
+    .card h3 { margin:0; font-size:.96rem; line-height:1.25; }
+    .card .desc { margin:0; color:var(--muted); font-size:.8rem; flex:1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card .row { display:flex; align-items:center; justify-content:space-between; margin-top:6px; gap:6px; }
+    .price { font-weight:800; color:var(--primary); font-size:1rem; }
+    .add-btn { background:var(--primary); color:#fff; border:none; width:34px; height:34px; border-radius:10px; font-weight:700; font-size:1.2rem; line-height:1; cursor:pointer; flex:none; transition:background .2s ease, transform .1s ease; }
+    .add-btn:hover { background:var(--secondary); } .add-btn:active { transform:scale(.9); }
+    .empty-menu { text-align:center; color:var(--muted); margin-top:60px; }
+
+    /* ============ PROMO CONTROLS (swipe-only) ============ */
+    .promo-wrap { position:relative; }
+    .promo-track { cursor:grab; } .promo-track:active { cursor:grabbing; }
+
+    /* ============ PRODUCT DETAIL PAGE ============ */
+    .product-screen { position:fixed; inset:0; z-index:65; background:var(--bg); display:none; flex-direction:column; overflow-y:auto; }
+    .product-screen.open { display:flex; }
+    .ps-top { position:sticky; top:0; z-index:2; background:var(--app-grad); color:#fff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 3px 14px rgba(20,30,15,.28); }
+    .ps-back { background:rgba(255,255,255,.15); border:none; color:#fff; width:42px; height:42px; border-radius:12px; font-size:1.4rem; line-height:1; cursor:pointer; }
+    [dir="rtl"] .ps-back { transform:scaleX(-1); }
+    .ps-body { max-width:760px; margin:0 auto; width:100%; padding-bottom:40px; }
+    .ps-hero { width:100%; aspect-ratio:4/3; max-height:420px; display:grid; place-items:center; font-size:6rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
+    .ps-hero img { width:100%; height:100%; object-fit:cover; }
+    .ps-content { padding:20px 18px; }
+    .ps-cat { display:inline-block; background:color-mix(in srgb, var(--accent) 25%, var(--surface)); color:var(--secondary); font-size:.78rem; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+    :root[data-theme="dark"] .ps-cat { color:var(--ink); }
+    .ps-title { margin:0 0 6px; font-size:1.5rem; }
+    .ps-price { font-size:1.4rem; font-weight:800; color:var(--primary); margin-bottom:14px; }
+    .ps-desc { color:var(--ink); line-height:1.6; font-size:.98rem; white-space:pre-wrap; margin:0; }
+    .ps-add { margin-top:24px; display:flex; gap:12px; align-items:center; }
+    .ps-addbtn { flex:1; background:var(--primary); color:#fff; border:none; padding:16px; border-radius:12px; font-size:1rem; font-weight:800; cursor:pointer; }
+    .ps-addbtn:active { transform:scale(.98); }
+    .ps-stepper { flex:1; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:6px 10px; }
+    .ps-stepper button { width:44px; height:44px; border:none; background:var(--primary); color:#fff; border-radius:10px; font-size:1.4rem; line-height:1; cursor:pointer; }
+    .ps-stepper .ps-qtynum { font-size:1.2rem; font-weight:800; }
+    .ps-checkout { background:var(--wa); color:#fff; border:none; padding:16px 18px; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; }
+    .ps-rows { padding:6px 0 24px; }
+    .ps-row { margin-top:18px; }
+    .ps-row h3 { margin:0 0 10px; padding:0 18px; font-size:1.05rem; color:var(--secondary); }
+    :root[data-theme="dark"] .ps-row h3 { color:var(--ink); }
+    .ps-row-track { display:flex; gap:12px; overflow-x:auto; padding:0 18px 4px; scrollbar-width:none; }
+    .ps-row-track::-webkit-scrollbar { display:none; }
+    .mini-card { flex:0 0 140px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer; text-align:start; padding:0; font-family:inherit; color:var(--ink); box-shadow:0 2px 8px var(--card-sh); }
+    .mini-thumb { width:100%; aspect-ratio:1/1; display:grid; place-items:center; font-size:2.2rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
+    .mini-thumb img { width:100%; height:100%; object-fit:cover; }
+    .mini-name { font-weight:700; font-size:.85rem; padding:8px 10px 0; line-height:1.2; }
+    .mini-price { font-weight:800; color:var(--primary); font-size:.85rem; padding:2px 10px 10px; }
+
+    /* ============ CART PANEL ============ */
+    .overlay { position:fixed; inset:0; background:rgba(20,25,15,.5); opacity:0; visibility:hidden; transition:opacity .25s ease, visibility .25s ease; z-index:70; }
+    .overlay.open { opacity:1; visibility:visible; }
+    .cart-panel { position:fixed; top:0; right:0; height:100%; width:min(420px,100%); background:var(--bg); z-index:75; transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 30px rgba(20,25,15,.3); }
+    [dir="rtl"] .cart-panel { right:auto; left:0; transform:translateX(-100%); box-shadow:8px 0 30px rgba(20,25,15,.3); }
+    .cart-panel.open { transform:translateX(0); }
+    .cart-head { padding:16px 18px; background:var(--app-grad); color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    .cart-head h2 { margin:0; font-size:1.15rem; }
+    .close-btn { background:none; border:none; font-size:1.7rem; line-height:1; cursor:pointer; color:#fff; }
+    .cart-items { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:12px; }
+    .cart-empty { text-align:center; color:var(--muted); margin-top:40px; font-size:.95rem; }
+    .cart-empty .big { font-size:2.5rem; display:block; margin-bottom:8px; }
+    .cart-item { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:center; }
+    .ci-thumb { width:44px; height:44px; border-radius:9px; display:grid; place-items:center; background:color-mix(in srgb, var(--accent) 30%, var(--surface)); font-size:1.4rem; overflow:hidden; }
+    .ci-thumb img { width:100%; height:100%; object-fit:cover; }
+    .ci-name { font-weight:700; font-size:.92rem; }
+    .ci-unit { color:var(--muted); font-size:.8rem; }
+    .ci-right { text-align:right; }
+    [dir="rtl"] .ci-right { text-align:left; }
+    .ci-total { font-weight:800; color:var(--primary); }
+    .qty { display:inline-flex; align-items:center; gap:8px; margin-top:6px; }
+    .qty button { width:26px; height:26px; border:1px solid var(--line); background:var(--surface); border-radius:7px; font-size:1rem; line-height:1; cursor:pointer; color:var(--primary); font-weight:700; }
+    .qty button:active { transform:scale(.9); }
+    .qty span { min-width:18px; text-align:center; font-weight:700; }
+    .ci-remove { background:none; border:none; color:var(--danger); font-size:.78rem; cursor:pointer; margin-top:6px; padding:0; }
+    .cart-foot { padding:16px 18px 22px; background:var(--surface); border-top:1px solid var(--line); }
+    .total-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+    .total-row .label { color:var(--muted); font-weight:600; }
+    .total-row .amount { font-size:1.5rem; font-weight:800; color:var(--primary); }
+    .checkout-btn { width:100%; background:var(--wa); color:#fff; border:none; padding:15px; border-radius:12px; font-size:1.02rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:background .2s ease, transform .1s ease; }
+    .checkout-btn:hover:not(:disabled){ background:var(--wa-dk); } .checkout-btn:active:not(:disabled){ transform:scale(.98); }
+    .checkout-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ============ ADMIN ============ */
+    .admin-screen { position:fixed; inset:0; z-index:80; background:var(--bg); display:none; flex-direction:column; }
+    .admin-screen.open { display:flex; }
+    .admin-top { background:var(--app-grad); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .admin-top h2 { margin:0; font-size:1.15rem; }
+    .admin-tabs { display:flex; gap:4px; background:var(--surface); border-bottom:1px solid var(--line); padding:0 12px; }
+    .admin-tabs button { background:none; border:none; padding:14px 16px; font-size:.95rem; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; }
+    .admin-tabs button.active { color:var(--primary); border-bottom-color:var(--primary); }
+    .admin-body { flex:1; overflow-y:auto; padding:18px; max-width:760px; margin:0 auto; width:100%; }
+    .admin-pane { display:none; } .admin-pane.active { display:block; }
+    .admin-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
+    .admin-bar h3 { margin:0; font-size:1.05rem; }
+    .btn { border:none; border-radius:10px; padding:10px 15px; font-weight:700; font-size:.9rem; cursor:pointer; }
+    .btn-primary { background:var(--primary); color:#fff; } .btn-primary:hover { background:var(--secondary); }
+    .btn-ghost { background:var(--surface); color:var(--primary); border:1px solid var(--line); } .btn-ghost:hover { background:color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+    .btn-danger { background:color-mix(in srgb, var(--danger) 14%, var(--surface)); color:var(--danger); } .btn-danger:hover { background:color-mix(in srgb, var(--danger) 24%, var(--surface)); }
+    .btn-sm { padding:7px 11px; font-size:.82rem; }
+    .list-row { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; }
+    .list-row .lr-thumb { width:42px; height:42px; border-radius:9px; display:grid; place-items:center; background:color-mix(in srgb, var(--accent) 30%, var(--surface)); font-size:1.3rem; overflow:hidden; flex:none; background-size:cover; background-position:center; }
+    .list-row .lr-thumb img { width:100%; height:100%; object-fit:cover; }
+    .list-row .lr-main { flex:1; min-width:0; }
+    .list-row .lr-name { font-weight:700; }
+    .list-row .lr-sub { color:var(--muted); font-size:.82rem; }
+    .list-row .lr-actions { display:flex; gap:6px; flex:none; }
+    .list-empty { color:var(--muted); text-align:center; padding:30px 0; }
+    .form-modal { position:fixed; inset:0; z-index:90; background:rgba(20,25,15,.5); display:none; align-items:flex-end; justify-content:center; }
+    .form-modal.open { display:flex; }
+    @media (min-width:620px){ .form-modal { align-items:center; } }
+    .form-card { background:var(--bg); width:min(560px,100%); max-height:92vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:20px; }
+    @media (min-width:620px){ .form-card { border-radius:18px; } }
+    .form-card h3 { margin:0 0 16px; }
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-weight:600; font-size:.85rem; margin-bottom:6px; color:var(--ink); }
+    .field input, .field textarea, .field select { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font-size:.95rem; font-family:inherit; background:var(--surface); color:var(--ink); }
+    .field textarea { min-height:64px; resize:vertical; }
+    .field .hint { color:var(--muted); font-size:.75rem; margin-top:4px; }
+    .field-2 { display:flex; gap:10px; } .field-2 > div { flex:1; }
+    .img-editor { display:flex; gap:12px; align-items:flex-start; }
+    .img-preview { width:68px; height:68px; flex:none; border-radius:10px; border:1px solid var(--line); background:color-mix(in srgb, var(--accent) 30%, var(--surface)); display:grid; place-items:center; font-size:2rem; overflow:hidden; background-size:cover; background-position:center; }
+    .img-preview img { width:100%; height:100%; object-fit:cover; }
+    .img-editor-controls { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+    .img-editor-buttons { display:flex; gap:8px; flex-wrap:wrap; }
+    .color-row { display:flex; gap:10px; } .color-row > div { flex:1; }
+    .field input[type=color] { height:44px; padding:4px; }
+    .check-field { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+    .check-field input { width:auto; }
+    .check-field label { margin:0; }
+    .form-actions { display:flex; gap:10px; margin-top:8px; }
+    .form-actions .btn { flex:1; padding:13px; }
+    .admin-footer { border-top:1px solid var(--line); margin-top:24px; padding-top:18px; }
+    .admin-footer h4 { margin:0 0 4px; }
+    .admin-footer p { margin:0 0 12px; color:var(--muted); font-size:.82rem; }
+    .admin-footer .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .warn-note { background:color-mix(in srgb, var(--accent) 20%, var(--surface)); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px 12px; font-size:.8rem; margin-bottom:16px; }
+    .pin-modal { position:fixed; inset:0; z-index:100; background:rgba(20,25,15,.55); display:none; align-items:center; justify-content:center; padding:20px; }
+    .pin-modal.open { display:flex; }
+    .pin-card { background:var(--bg); border-radius:18px; padding:24px; width:min(340px,100%); text-align:center; }
+    .pin-card h3 { margin:0 0 6px; } .pin-card p { margin:0 0 16px; color:var(--muted); font-size:.85rem; }
+    .pin-card input { width:100%; text-align:center; letter-spacing:8px; font-size:1.4rem; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); }
+    .pin-error { color:var(--danger); font-size:.82rem; min-height:18px; margin:8px 0 0; }
+  </style>
+</head>
+<body data-lang="ar">
+
+  <!-- ============================ HEADER ============================ -->
+  <header>
+    <div class="header-inner">
+      <div class="brand" id="brand" title="Press &amp; hold to open the admin panel">
+        <span class="logo">🌿</span>
+        <span class="wordmark">Sham Store<small>DAMASCUS · دمشق</small></span>
+      </div>
+      <div class="search-box" id="searchBox">
+        <button type="button" class="search-icon" id="searchIconBtn" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        <input type="text" id="searchInput" autocomplete="off" enterkeyhint="search" />
+      </div>
+      <button class="lang-btn" id="langBtn" aria-label="Toggle language">EN</button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      <button class="icon-btn" id="cartBtn" aria-label="Open cart">🛒<span class="badge" id="badge">0</span></button>
+    </div>
+  </header>
+
+  <!-- ============================ ADS / PROMO CAROUSEL ============================ -->
+  <div class="promo-wrap" id="promoWrap">
+    <div class="promo-track" id="promoTrack"></div>
+  </div>
+
+  <!-- ============================ CATEGORY TAB BAR ============================ -->
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <!-- ============================ MENU ============================ -->
+  <main id="menuRoot"></main>
+
+  <!-- ============================ CART PANEL ============================ -->
+  <div class="overlay" id="overlay"></div>
+  <aside class="cart-panel" id="cartPanel" aria-label="Shopping cart">
+    <div class="cart-head"><h2 id="cartTitle">Your Order</h2><button class="close-btn" id="closeBtn" aria-label="Close cart">&times;</button></div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-foot">
+      <div class="total-row"><span class="label" id="totalLabel">Total</span><span class="amount" id="totalAmount">₪0.00</span></div>
+      <button class="checkout-btn" id="checkoutBtn" disabled><span>💬</span> <span id="checkoutLabel">Checkout via WhatsApp</span></button>
+    </div>
+  </aside>
+
+  <!-- ============================ PRODUCT DETAIL PAGE ============================ -->
+  <div class="product-screen" id="productScreen">
+    <div class="ps-top">
+      <button class="ps-back" id="psBack" aria-label="Back">←</button>
+      <button class="icon-btn" id="psCart" aria-label="Open cart">🛒<span class="badge" id="psBadge">0</span></button>
+    </div>
+    <div class="ps-body" id="productBody"></div>
+  </div>
+
+  <!-- ============================ ADMIN ============================ -->
+  <div class="admin-screen" id="adminScreen">
+    <div class="admin-top"><h2>⚙️ الإدارة — إدارة القائمة</h2><button class="btn btn-ghost btn-sm" id="adminClose">تم</button></div>
+    <div class="admin-tabs">
+      <button data-tab="products" class="active">المنتجات</button>
+      <button data-tab="categories">الفئات</button>
+      <button data-tab="ads">الإعلانات</button>
+    </div>
+    <div class="admin-body">
+      <div class="warn-note">ℹ️ يتم حفظ التغييرات في <b>هذا المتصفح فقط</b> (التخزين المحلي). لنشرها للعملاء، استخدم <b>تصدير</b> أدناه، ثم استوردها على الأجهزة الأخرى أو أدرج الملف ضمن الاستضافة.</div>
+      <div class="admin-pane active" id="pane-products">
+        <div class="admin-bar"><h3>المنتجات</h3><button class="btn btn-primary btn-sm" id="addProductBtn">+ إضافة منتج</button></div>
+        <div id="adminProductList"></div>
+      </div>
+      <div class="admin-pane" id="pane-categories">
+        <div class="admin-bar"><h3>الفئات</h3><button class="btn btn-primary btn-sm" id="addCategoryBtn">+ إضافة فئة</button></div>
+        <div id="adminCategoryList"></div>
+      </div>
+      <div class="admin-pane" id="pane-ads">
+        <div class="admin-bar"><h3>لافتات الإعلانات</h3><button class="btn btn-primary btn-sm" id="addAdBtn">+ إضافة إعلان</button></div>
+        <div id="adminAdList"></div>
+      </div>
+      <div class="admin-footer">
+        <h4>النسخ الاحتياطي والنقل</h4>
+        <p>صدّر قائمتك (المنتجات والفئات والإعلانات) كملف JSON، استورده على جهاز آخر، أو أعده إلى النسخة التجريبية الافتراضية.</p>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="exportBtn">⬇ تصدير JSON</button>
+          <button class="btn btn-ghost btn-sm" id="importBtn">⬆ استيراد JSON</button>
+          <button class="btn btn-danger btn-sm" id="resetBtn">↺ إعادة للنسخة التجريبية</button>
+          <input type="file" id="importFile" accept="application/json" hidden />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-modal" id="formModal"><div class="form-card" id="formCard"></div></div>
+
+  <div class="pin-modal" id="pinModal">
+    <div class="pin-card">
+      <h3>الدخول للإدارة</h3>
+      <p>أدخل الرمز المكوّن من 4 أرقام لإدارة القائمة.</p>
+      <input type="password" id="pinInput" inputmode="numeric" maxlength="4" autocomplete="off" />
+      <p class="pin-error" id="pinError"></p>
+      <div class="form-actions"><button class="btn btn-ghost" id="pinCancel">إلغاء</button><button class="btn btn-primary" id="pinSubmit">دخول</button></div>
+    </div>
+  </div>
+
+  <!-- ============================ SCRIPT ============================ -->
+  <script>
+  /* ================================================================
+     ⚠️  CONFIG
+       WHATSAPP_NUMBER — full international format, DIGITS ONLY (no + / spaces).
+       ADMIN_PIN — opens admin (long-press the logo). Client-side only, NOT
+         real security — for real protection use your Django backend.
+       CURRENCY — ₪, shown before the amount (matches the kiosk).
+     ================================================================ */
+  const SUPABASE_URL      = "https://sngsxxvkfhbofprvxaio.supabase.co";  // your Project URL
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuZ3N4eHZrZmhib2ZwcnZ4YWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MjIwMTIsImV4cCI6MjEwMTE5ODAxMn0.EtvsuUGPB5hLXX9xSQkaWq7BSIvX_s__FTt1xEEh2aE";
+  const WHATSAPP_NUMBER = "905528192778";   // <-- REPLACE THIS
+  const ADMIN_PIN       = "1234";            // <-- change this
+  const CURRENCY        = "₪";
+  const STORAGE_KEY     = "shamstore_catalog_v1";
+  const THEME_KEY       = "shamstore_theme";
+  const LANG_KEY        = "shamstore_lang";
+
+  /* ---------- UI strings ---------- */
+  const I18N = {
+    en: { viewOffer:"View Offer", yourOrder:"Your Order", checkoutWa:"Checkout via WhatsApp",
+      checkout:"Checkout", view:"View", total:"Total", each:"each", remove:"Remove", other:"Other",
+      emptyCart:"Your cart is empty.<br/>Add some items from the menu!", emptyMenu:"No products yet. Open the admin panel to add some.",
+      added:"Added to order", orderHi:"Hello, I would like to order:", orderTotal:"Total", langBtn:"ع", addToCart:"Add to cart", related:"Related products", favorites:"Favorites", mostViewed:"Most viewed",
+      searchPlaceholder:"Search products…", searchResults:"Search results", noResults:"No products match your search.",
+      items:(n)=>`${n} item${n===1?"":"s"}` },
+    ar: { viewOffer:"عرض التفاصيل", yourOrder:"طلبك", checkoutWa:"أتمم الطلب عبر واتساب",
+      checkout:"إتمام", view:"عرض", total:"الإجمالي", each:"للحبة", remove:"إزالة", other:"أخرى",
+      emptyCart:"سلتك فارغة.<br/>أضف بعض المنتجات من القائمة!", emptyMenu:"لا توجد منتجات بعد. افتح لوحة الإدارة لإضافتها.",
+      added:"أُضيف إلى الطلب", orderHi:"مرحبًا، أودّ أن أطلب:", orderTotal:"الإجمالي", langBtn:"EN", addToCart:"أضف إلى الطلب", related:"منتجات ذات صلة", favorites:"المفضلة", mostViewed:"الأكثر مشاهدة",
+      searchPlaceholder:"ابحث عن المنتجات…", searchResults:"نتائج البحث", noResults:"لا توجد منتجات مطابقة لبحثك.",
+      items:(n)=>`${n} ${n===1?"منتج":"منتجات"}` },
+  };
+
+  /* ---------- Default (demo) catalog — bilingual + ads ---------- */
+  const DEFAULT_DATA = {
+    categories: [
+      { id:"c1", nameEn:"Perfumes & Oils",  nameAr:"العطور والزيوت" },
+      { id:"c2", nameEn:"Spices & Herbs",   nameAr:"البهارات والأعشاب" },
+      { id:"c3", nameEn:"Incense & Resin",  nameAr:"البخور والراتنج" },
+    ],
+    products: [
+      { id:"p1", titleEn:"Damascus Rose Perfume", titleAr:"عطر الورد الدمشقي", descEn:"Hand-distilled rose attar, deep and long-lasting.", descAr:"عطر ورد مقطّر يدويًا، عميق وطويل الأمد.", price:24.00, img:"🌹", categoryId:"c1", viewCount:12, isFavorite:true },
+      { id:"p2", titleEn:"Musk Oil (Roll-on)",    titleAr:"زيت المسك (كرة دوّارة)", descEn:"Warm white musk, alcohol-free. 10ml roll-on.", descAr:"مسك أبيض دافئ، خالٍ من الكحول. كرة دوّارة ١٠ مل.", price:15.00, img:"🧴", categoryId:"c1", viewCount:5, isFavorite:false },
+      { id:"p3", titleEn:"Aleppo Za'atar Blend",  titleAr:"خلطة زعتر حلبي", descEn:"Wild thyme, sumac & toasted sesame. 200g bag.", descAr:"زعتر بري وسمّاق وسمسم محمّص. كيس ٢٠٠غ.", price:8.50, img:"🌿", categoryId:"c2", viewCount:8, isFavorite:true },
+      { id:"p4", titleEn:"Saffron Threads",       titleAr:"خيوط الزعفران", descEn:"Grade A red saffron. Rich aroma & color. 2g tin.", descAr:"زعفران أحمر فاخر. رائحة ولون غنيّ. علبة ٢غ.", price:18.00, img:"🌸", categoryId:"c2", viewCount:20, isFavorite:false },
+      { id:"p5", titleEn:"Frankincense Resin",    titleAr:"راتنج اللبان", descEn:"Premium Boswellia tears for incense burning. 100g.", descAr:"دموع لبان فاخرة لحرق البخور. ١٠٠غ.", price:12.00, img:"🪔", categoryId:"c3", viewCount:3, isFavorite:false },
+    ],
+    ads: [
+      { id:"a1", titleEn:"Hot Deals",    titleAr:"عروض ساخنة", subEn:"Discounts on selected spices",  subAr:"تخفيضات على البهارات المختارة", g1:"#B71C1C", g2:"#EF5350", img:null, linkType:"none", linkCategoryId:null, linkUrl:"", active:true },
+      { id:"a2", titleEn:"New Arrivals", titleAr:"وصل حديثاً", subEn:"Fresh spices & aromatics just in", subAr:"بهارات وعطور جديدة وصلت", g1:"#1B5E20", g2:"#43A047", img:null, linkType:"category", linkCategoryId:"c2", linkUrl:"", active:true },
+      { id:"a3", titleEn:"Best Sellers", titleAr:"الأكثر مبيعاً", subEn:"Our customers' favourites",   subAr:"المنتجات المفضلة لعملائنا", g1:"#0D47A1", g2:"#5C6BC0", img:null, linkType:"none", linkCategoryId:null, linkUrl:"", active:true },
+    ],
+  };
+
+  /* ---------- State ---------- */
+  let state = loadData();
+  let lang = "ar";
+  let searchQuery = "";
+  const cart = {};
+  let formUploadedPhoto = null;   // product image
+  let adUploadedPhoto = null;     // ad background image
+
+  /* ---------- Utilities ---------- */
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => CURRENCY + Number(n).toFixed(2);
+  const uid = (p) => p + "_" + Date.now().toString(36) + Math.floor(Math.random()*1e5).toString(36);
+  const esc = (s="") => String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const isImgUrl = (v) => /^(https?:|data:)/i.test(v || "");
+  const t = (k) => I18N[lang][k];
+  const pick = (en, ar) => lang === "ar" ? (ar || en || "") : (en || ar || "");
+  const findProduct = (id) => state.products.find((p)=>p.id===id);
+  const findCategory = (id) => state.categories.find((c)=>c.id===id);
+  const findAd = (id) => state.ads.find((a)=>a.id===id);
+  const catName = (id) => { const c = findCategory(id); return c ? pick(c.nameEn, c.nameAr) : t("other"); };
+  const prodName = (p) => pick(p.titleEn, p.titleAr);
+
+  function migrate(d) {
+    if (!Array.isArray(d.ads)) d.ads = JSON.parse(JSON.stringify(DEFAULT_DATA.ads));
+    (d.categories||[]).forEach((c)=>{ if (c.nameEn===undefined){ c.nameEn=c.name||""; c.nameAr=c.nameAr||""; delete c.name; } });
+    (d.products||[]).forEach((p)=>{
+      if (p.titleEn===undefined){ p.titleEn=p.title||""; p.titleAr=p.titleAr||""; delete p.title; }
+      if (p.descEn===undefined){ p.descEn=p.desc||""; p.descAr=p.descAr||""; delete p.desc; }
+      if (p.viewCount===undefined) p.viewCount = 0;
+      if (p.isFavorite===undefined) p.isFavorite = false;
+    });
+    return d;
+  }
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.products) && Array.isArray(p.categories)) return migrate(p); }
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+  function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { toast("⚠️ Could not save (storage full?)"); } }
+
+  function thumbHTML(img, cls) {
+    if (isImgUrl(img)) return `<div class="${cls}"><img src="${esc(img)}" alt="" /></div>`;
+    return `<div class="${cls}">${esc(img || "🛍️")}</div>`;
+  }
+  function toast() { /* bottom toast removed */ }
+
+  /* ---------- Theme & Language ---------- */
+  function applyTheme(mode) { document.documentElement.dataset.theme=mode; $("themeBtn").textContent = mode==="dark"?"☀️":"🌙"; try{localStorage.setItem(THEME_KEY,mode);}catch(e){} }
+  function toggleTheme() { applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"); }
+
+  function applyStaticI18n() {
+    $("langBtn").textContent = t("langBtn");
+    $("cartTitle").textContent = t("yourOrder");
+    $("totalLabel").textContent = t("total");
+    $("checkoutLabel").textContent = t("checkoutWa");
+    $("searchInput").placeholder = t("searchPlaceholder");
+  }
+  function setLang(l) {
+    lang = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+    document.body.dataset.lang = l;
+    applyStaticI18n();
+    renderPromos(); renderTabBar(); renderMenu(); renderCart();
+    if ($("adminScreen").classList.contains("open")) renderAdmin();
+  }
+  function toggleLang() { setLang(lang === "ar" ? "en" : "ar"); }
+
+  /* ================================================================
+     ADS / PROMO CAROUSEL
+     ================================================================ */
+  function adCardHTML(a) {
+    const title = pick(a.titleEn, a.titleAr), sub = pick(a.subEn, a.subAr);
+    const bg = a.img ? `background-image:url('${esc(a.img)}')` : `background-image:linear-gradient(135deg, ${esc(a.g1||"#4D6B47")}, ${esc(a.g2||"#3A5235")})`;
+    const pillColor = a.img ? "#3A5235" : (a.g1 || "#3A5235");
+    const linked = a.linkType && a.linkType !== "none";
+    return `
+      <div class="promo-card" data-ad="${esc(a.id)}" style="${bg}">
+        <div class="overlay-grad"></div>
+        <div class="p-body">
+          <span class="p-icon">${linked ? "🔗" : "📣"}</span>
+          <div class="p-title">${esc(title)}</div>
+          ${sub ? `<div class="p-sub">${esc(sub)}</div>` : ""}
+          <span class="p-pill" style="color:${esc(pillColor)}">${esc(t("viewOffer"))}</span>
+        </div>
+      </div>`;
+  }
+  function renderPromos() {
+    const ads = state.ads.filter((a)=>a.active !== false);
+    const track = $("promoTrack");
+    promoRealCount = ads.length;
+    $("promoWrap").style.display = ads.length ? "" : "none";
+    // Triple the ads (when >1) so the strip can loop seamlessly in both directions.
+    const copies = ads.length > 1 ? 3 : 1;
+    let html = "";
+    for (let c = 0; c < copies; c++) html += ads.map(adCardHTML).join("");
+    track.innerHTML = html;
+    // start centered on the middle copy so there's a full set of ads on each side
+    if (copies === 3 && track.children[0]) track.scrollLeft = ads.length * (track.children[0].offsetWidth + 12);
+  }
+  function onAdClick(id) {
+    const a = findAd(id); if (!a) return;
+    if (a.linkType === "category" && a.linkCategoryId && findCategory(a.linkCategoryId)) goToCategory(sectionId(a.linkCategoryId));
+    else if (a.linkType === "product" && a.linkProductId && findProduct(a.linkProductId)) openProduct(a.linkProductId);
+    else if (a.linkType === "url" && a.linkUrl) window.open(a.linkUrl, "_blank");
+    else { const f = firstSectionId(); if (f) goToCategory(f); }
+  }
+  let promoRealCount = 0, promoPaused = false, promoResume, promoDragMoved = 0;
+  function promoStepPx() { const t = $("promoTrack"); return t.children[0] ? t.children[0].offsetWidth + 12 : 1; }
+  // Seamless loop: after a scroll settles, if we've drifted out of the middle copy,
+  // instantly jump one full set back into it. Content is identical, so it's invisible.
+  function recenterLoop() {
+    const t = $("promoTrack"); if (promoRealCount <= 1) return;
+    const step = promoStepPx(), n = promoRealCount, idx = Math.round(t.scrollLeft / step);
+    if (idx < n) t.scrollLeft = (idx + n) * step;
+    else if (idx >= 2 * n) t.scrollLeft = (idx - n) * step;
+  }
+  function promoStep() { if (promoPaused || promoRealCount <= 1) return; $("promoTrack").scrollBy({ left: promoStepPx(), behavior: "smooth" }); }
+  function pausePromo(ms) { promoPaused = true; clearTimeout(promoResume); promoResume = setTimeout(() => promoPaused = false, ms); }
+  function initPromoAutoSlide() {
+    const track = $("promoTrack");
+    setInterval(promoStep, 3000);
+    // mouse drag-to-scroll (desktop); touch uses native scrolling
+    let dragging = false, startX = 0, startScroll = 0;
+    track.addEventListener("pointerdown", (e) => {
+      pausePromo(4000); promoDragMoved = 0;
+      if (e.pointerType === "mouse") { dragging = true; startX = e.clientX; startScroll = track.scrollLeft; }
+    });
+    window.addEventListener("pointermove", (e) => { if (!dragging) return; const dx = e.clientX - startX; promoDragMoved = Math.abs(dx); track.scrollLeft = startScroll - dx; });
+    window.addEventListener("pointerup", () => { dragging = false; clearTimeout(promoResume); promoResume = setTimeout(() => promoPaused = false, 1500); });
+    // on settle: re-center for the loop
+    let scrollT;
+    track.addEventListener("scroll", () => { clearTimeout(scrollT); scrollT = setTimeout(recenterLoop, 120); });
+    // tap opens the ad link (suppressed right after a drag)
+    track.addEventListener("click", (e) => { if (promoDragMoved > 6) { promoDragMoved = 0; return; } const c = e.target.closest("[data-ad]"); if (c) onAdClick(c.dataset.ad); });
+  }
+
+  /* ================================================================
+     TAB BAR + MENU
+     ================================================================ */
+  const SCROLL_OFFSET = 108;
+  const sectionId = (catId) => "cat-" + (catId || "other");
+  let currentCatId = null;
+  function firstSectionId() {
+    const cat = state.categories.find((c)=>state.products.some((p)=>p.categoryId===c.id));
+    if (cat) return sectionId(cat.id);
+    return state.products.length ? "cat-other" : null;
+  }
+  function renderTabBar() {
+    const bar = $("tabbar");
+    const cats = state.categories.filter((c)=>state.products.some((p)=>p.categoryId===c.id));
+    const hasOther = state.products.some((p)=>!findCategory(p.categoryId));
+    let tabs = cats.map((c)=>`<button class="tab" data-target="${sectionId(c.id)}">${esc(pick(c.nameEn,c.nameAr))}</button>`).join("");
+    if (hasOther) tabs += `<button class="tab" data-target="cat-other">${esc(t("other"))}</button>`;
+    bar.innerHTML = tabs;
+    bar.style.display = (tabs && !searchQuery.trim()) ? "" : "none";
+    if (bar.firstElementChild) bar.firstElementChild.classList.add("active");
+  }
+  function renderMenu() {
+    const root = $("menuRoot");
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const matches = state.products.filter((p)=>
+        (p.titleEn||"").toLowerCase().includes(q) || (p.titleAr||"").includes(q) ||
+        (p.descEn||"").toLowerCase().includes(q) || (p.descAr||"").includes(q));
+      root.innerHTML = matches.length
+        ? renderSection("cat-search", `${t("searchResults")} (${matches.length})`, matches)
+        : `<div class="empty-menu"><p style="font-size:2.5rem;margin:0">🔍</p><p>${esc(t("noResults"))}</p></div>`;
+      if ($("cat-search")) $("cat-search").classList.add("show");
+      return;
+    }
+    if (state.products.length === 0) { root.innerHTML = `<div class="empty-menu"><p style="font-size:2.5rem;margin:0">🍽️</p><p>${esc(t("emptyMenu"))}</p></div>`; return; }
+    let html = ""; const used = new Set();
+    state.categories.forEach((cat)=>{
+      const items = state.products.filter((p)=>p.categoryId===cat.id);
+      if (!items.length) return;
+      items.forEach((p)=>used.add(p.id));
+      html += renderSection(sectionId(cat.id), pick(cat.nameEn,cat.nameAr), items);
+    });
+    const orphans = state.products.filter((p)=>!used.has(p.id));
+    if (orphans.length) html += renderSection("cat-other", t("other"), orphans);
+    root.innerHTML = html;
+    const target = ($(currentCatId) ? currentCatId : firstSectionId());
+    if (target) activateCategory(target);
+  }
+  function renderSection(id, title, items) {
+    return `
+      <section class="cat-section" id="${id}">
+        <h2 class="cat-title">${esc(title)}</h2>
+        <div class="grid">
+          ${items.map((item)=>`
+            <article class="card" data-open="${esc(item.id)}">
+              ${thumbHTML(item.img, "thumb")}
+              <div class="body">
+                <h3>${esc(prodName(item))}</h3>
+                <p class="desc">${esc(pick(item.descEn,item.descAr))}</p>
+                <div class="row">
+                  <span class="price">${money(item.price)}</span>
+                  <button class="add-btn" data-add="${esc(item.id)}" aria-label="Add">+</button>
+                </div>
+              </div>
+            </article>`).join("")}
+        </div>
+      </section>`;
+  }
+  function activateCategory(id) {
+    if (!$(id)) return;
+    currentCatId = id;
+    document.querySelectorAll(".cat-section").forEach((s)=>s.classList.toggle("show", s.id===id));
+    document.querySelectorAll(".tab").forEach((tb)=>tb.classList.toggle("active", tb.dataset.target===id));
+  }
+  const tabbarTargetTop = () => $("tabbar").getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+  function goToCategory(id) {
+    activateCategory(id);
+    window.scrollTo({ top: tabbarTargetTop(), behavior:"smooth" });
+  }
+
+  /* Search bar only expands once scrolled past the ads section (or while actively searching). */
+  let searchForceOpen = false;
+  function updateSearchExpand() {
+    const box = $("searchBox");
+    if (searchForceOpen) { box.classList.add("open"); return; }
+    const pastAds = window.scrollY >= tabbarTargetTop();
+    const active = pastAds || searchQuery.trim() !== "" || document.activeElement === $("searchInput");
+    box.classList.toggle("open", active);
+  }
+  window.addEventListener("scroll", updateSearchExpand, { passive:true });
+  window.addEventListener("resize", updateSearchExpand);
+
+  /* ================================================================
+     CART
+     ================================================================ */
+  function addToCart(id) { cart[id]=(cart[id]||0)+1; renderCart(); toast(t("added")); }
+  function changeQty(id, d) { if (!cart[id]) return; cart[id]+=d; if (cart[id]<=0) delete cart[id]; renderCart(); }
+  function removeItem(id) { delete cart[id]; renderCart(); }
+  const cartCount = () => Object.values(cart).reduce((s,q)=>s+q,0);
+  const cartPrice = () => Object.entries(cart).reduce((s,[id,q])=>{ const p=findProduct(id); return p?s+p.price*q:s; },0);
+
+  function renderCart() {
+    Object.keys(cart).forEach((id)=>{ if (!findProduct(id)) delete cart[id]; });
+    const ids = Object.keys(cart), count = cartCount();
+    $("badge").textContent = count;
+    $("badge").classList.toggle("show", count>0);
+    const psb = $("psBadge");
+    if (psb) { psb.textContent = count; psb.classList.toggle("show", count>0); }
+    if (currentProductId) renderProduct(currentProductId);
+
+    if (ids.length === 0) {
+      $("cartItems").innerHTML = `<div class="cart-empty"><span class="big">🛒</span>${t("emptyCart")}</div>`;
+      $("totalAmount").textContent = money(0); $("checkoutBtn").disabled = true; return;
+    }
+    $("cartItems").innerHTML = ids.map((id)=>{
+      const item=findProduct(id), qty=cart[id], line=item.price*qty;
+      return `
+        <div class="cart-item">
+          ${thumbHTML(item.img, "ci-thumb")}
+          <div>
+            <div class="ci-name">${esc(prodName(item))}</div>
+            <div class="ci-unit">${money(item.price)} ${esc(t("each"))}</div>
+            <div class="qty"><button data-dec="${esc(id)}">−</button><span>${qty}</span><button data-inc="${esc(id)}">+</button></div>
+            <button class="ci-remove" data-remove="${esc(id)}">${esc(t("remove"))}</button>
+          </div>
+          <div class="ci-right"><div class="ci-total">${money(line)}</div></div>
+        </div>`;
+    }).join("");
+    $("totalAmount").textContent = money(cartPrice());
+    $("checkoutBtn").disabled = false;
+  }
+  const openCart = () => { $("cartPanel").classList.add("open"); $("overlay").classList.add("open"); };
+  const closeCart = () => { $("cartPanel").classList.remove("open"); $("overlay").classList.remove("open"); };
+  function checkout() {
+    const ids = Object.keys(cart); if (!ids.length) return;
+    let message = t("orderHi") + "\n\n";
+    ids.forEach((id)=>{ const item=findProduct(id), qty=cart[id]; message += `${qty}x ${prodName(item)} (${money(item.price*qty)})\n`; });
+    message += `\n*${t("orderTotal")}: ${money(cartPrice())}*`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
+  }
+
+  /* ================================================================
+     PRODUCT DETAIL PAGE (each product has its own URL: #product/<id>)
+     ================================================================ */
+  let currentProductId = null;
+  function openProduct(id) { if (!findProduct(id)) return; location.hash = "product/" + id; }
+  function closeProduct() { if (location.hash) { if (history.length > 1) history.back(); else location.hash = ""; } }
+  function handleHash() {
+    const m = (location.hash || "").match(/^#product\/(.+)$/);
+    if (m && findProduct(decodeURIComponent(m[1]))) {
+      currentProductId = decodeURIComponent(m[1]);
+      const pp = findProduct(currentProductId);
+      pp.viewCount = (pp.viewCount || 0) + 1; saveData();   // real view tracking → "Most viewed"
+      renderProduct(currentProductId);
+      $("productScreen").classList.add("open");
+      $("productScreen").scrollTop = 0;
+    } else {
+      currentProductId = null;
+      $("productScreen").classList.remove("open");
+    }
+  }
+  function miniThumb(img) { return isImgUrl(img) ? `<div class="mini-thumb"><img src="${esc(img)}" alt="" /></div>` : `<div class="mini-thumb">${esc(img || "🛍️")}</div>`; }
+  function productRowHTML(key, items) {
+    if (!items.length) return "";
+    return `
+      <div class="ps-row">
+        <h3>${esc(t(key))}</h3>
+        <div class="ps-row-track">
+          ${items.map((x)=>`
+            <button class="mini-card" data-open-mini="${esc(x.id)}">
+              ${miniThumb(x.img)}
+              <div class="mini-name">${esc(prodName(x))}</div>
+              <div class="mini-price">${money(x.price)}</div>
+            </button>`).join("")}
+        </div>
+      </div>`;
+  }
+  function renderProduct(id) {
+    const p = findProduct(id); if (!p) return;
+    const qty = cart[id] || 0;
+    const addRegion = qty > 0
+      ? `<div class="ps-stepper"><button data-ps-dec="${esc(id)}" aria-label="Decrease">−</button><span class="ps-qtynum">${qty}</span><button data-ps-inc="${esc(id)}" aria-label="Increase">+</button></div>
+         <button class="ps-checkout" data-ps-checkout><span>💬</span> ${esc(t("checkout"))}</button>`
+      : `<button class="ps-addbtn" data-ps-add="${esc(id)}">＋ ${esc(t("addToCart"))}</button>`;
+    const cat = findCategory(p.categoryId);
+    const heroImg = isImgUrl(p.img) ? `<img src="${esc(p.img)}" alt="" />` : `<span>${esc(p.img || "🛍️")}</span>`;
+    const desc = pick(p.descEn, p.descAr);
+    // related / favorites / most-viewed (all exclude the current product)
+    const related = state.products.filter((x)=>x.id!==id && x.categoryId===p.categoryId).slice(0, 10);
+    const favs = state.products.filter((x)=>x.id!==id && x.isFavorite).slice(0, 10);
+    const viewed = state.products.filter((x)=>x.id!==id && (x.viewCount||0)>0).sort((a,b)=>(b.viewCount||0)-(a.viewCount||0)).slice(0, 10);
+    const rows = productRowHTML("related", related) + productRowHTML("favorites", favs) + productRowHTML("mostViewed", viewed);
+    $("productBody").innerHTML = `
+      <div class="ps-hero">${heroImg}</div>
+      <div class="ps-content">
+        ${cat ? `<span class="ps-cat">${esc(pick(cat.nameEn, cat.nameAr))}</span>` : ""}
+        <h1 class="ps-title">${esc(prodName(p))}</h1>
+        <div class="ps-price">${money(p.price)}</div>
+        ${desc ? `<p class="ps-desc">${esc(desc)}</p>` : ""}
+        <div class="ps-add">${addRegion}</div>
+      </div>
+      ${rows ? `<div class="ps-rows">${rows}</div>` : ""}`;
+  }
+
+  /* ================================================================
+     ADMIN — lists
+     ================================================================ */
+  function openAdmin() { $("adminScreen").classList.add("open"); renderAdmin(); }
+  function closeAdmin() { $("adminScreen").classList.remove("open"); }
+  function renderAdmin() { renderAdminProducts(); renderAdminCategories(); renderAdminAds(); }
+
+  function renderAdminProducts() {
+    const box = $("adminProductList");
+    if (!state.products.length) { box.innerHTML = `<div class="list-empty">لا توجد منتجات بعد.</div>`; return; }
+    box.innerHTML = state.products.map((p)=>`
+      <div class="list-row">
+        ${thumbHTML(p.img, "lr-thumb")}
+        <div class="lr-main"><div class="lr-name">${esc(prodName(p))}</div><div class="lr-sub">${money(p.price)} · ${esc(catName(p.categoryId))}</div></div>
+        <div class="lr-actions"><button class="btn btn-ghost btn-sm" data-fav-product="${esc(p.id)}" title="تبديل المفضلة">${p.isFavorite?"★":"☆"}</button><button class="btn btn-ghost btn-sm" data-edit-product="${esc(p.id)}">تعديل</button><button class="btn btn-danger btn-sm" data-del-product="${esc(p.id)}">حذف</button></div>
+      </div>`).join("");
+  }
+  function renderAdminCategories() {
+    const box = $("adminCategoryList");
+    if (!state.categories.length) { box.innerHTML = `<div class="list-empty">لا توجد فئات بعد.</div>`; return; }
+    box.innerHTML = state.categories.map((c)=>{
+      const n = state.products.filter((p)=>p.categoryId===c.id).length;
+      return `
+        <div class="list-row">
+          <div class="lr-thumb">🏷️</div>
+          <div class="lr-main"><div class="lr-name">${esc(pick(c.nameEn,c.nameAr))}</div><div class="lr-sub">${n} ${n===1?"منتج":"منتجات"}</div></div>
+          <div class="lr-actions"><button class="btn btn-ghost btn-sm" data-edit-category="${esc(c.id)}">تعديل</button><button class="btn btn-danger btn-sm" data-del-category="${esc(c.id)}">حذف</button></div>
+        </div>`;
+    }).join("");
+  }
+  function renderAdminAds() {
+    const box = $("adminAdList");
+    if (!state.ads.length) { box.innerHTML = `<div class="list-empty">لا توجد إعلانات بعد.</div>`; return; }
+    box.innerHTML = state.ads.map((a)=>{
+      const thumbStyle = a.img ? `style="background-image:url('${esc(a.img)}')"` : `style="background-image:linear-gradient(135deg, ${esc(a.g1||"#4D6B47")}, ${esc(a.g2||"#3A5235")})"`;
+      const linkTxt = a.linkType==="category" ? ("→ " + catName(a.linkCategoryId)) : a.linkType==="product" ? ("→ " + (findProduct(a.linkProductId) ? prodName(findProduct(a.linkProductId)) : "منتج")) : a.linkType==="url" ? "→ رابط" : "بدون رابط";
+      return `
+        <div class="list-row">
+          <div class="lr-thumb" ${thumbStyle}></div>
+          <div class="lr-main"><div class="lr-name">${esc(pick(a.titleEn,a.titleAr)) || "(بدون عنوان)"}${a.active===false?' · <span style="color:var(--muted)">مخفي</span>':''}</div><div class="lr-sub">${esc(linkTxt)}</div></div>
+          <div class="lr-actions"><button class="btn btn-ghost btn-sm" data-edit-ad="${esc(a.id)}">تعديل</button><button class="btn btn-danger btn-sm" data-del-ad="${esc(a.id)}">حذف</button></div>
+        </div>`;
+    }).join("");
+  }
+
+  /* ================================================================
+     ADMIN — product form
+     ================================================================ */
+  function openProductForm(id) {
+    const editing = id ? findProduct(id) : null;
+    const hasPhoto = !!(editing && (editing.img||"").startsWith("data:"));
+    formUploadedPhoto = hasPhoto ? editing.img : null;
+    const textImg = editing && !hasPhoto ? esc(editing.img) : "";
+    const opts = state.categories.map((c)=>`<option value="${esc(c.id)}" ${editing && editing.categoryId===c.id?"selected":""}>${esc(pick(c.nameEn,c.nameAr))}</option>`).join("");
+    $("formCard").innerHTML = `
+      <h3>${editing?"تعديل منتج":"إضافة منتج"}</h3>
+      <div class="field-2">
+        <div class="field"><label>العنوان (إنجليزي)</label><input id="f_titleEn" value="${editing?esc(editing.titleEn):""}" placeholder="Rose Perfume" /></div>
+        <div class="field"><label>العنوان (عربي)</label><input id="f_titleAr" dir="rtl" value="${editing?esc(editing.titleAr):""}" placeholder="عطر الورد" /></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>الوصف (إنجليزي)</label><textarea id="f_descEn" placeholder="Short description">${editing?esc(editing.descEn):""}</textarea></div>
+        <div class="field"><label>الوصف (عربي)</label><textarea id="f_descAr" dir="rtl" placeholder="وصف قصير">${editing?esc(editing.descAr):""}</textarea></div>
+      </div>
+      <div class="field"><label>السعر (${CURRENCY}) *</label><input id="f_price" type="number" min="0" step="0.01" value="${editing?editing.price:""}" placeholder="0.00" /></div>
+      <div class="field"><label>الفئة</label><select id="f_cat"><option value="">— بدون —</option>${opts}</select></div>
+      <div class="field">
+        <label>الصورة</label>
+        <div class="img-editor">
+          <div class="img-preview" id="f_img_preview"></div>
+          <div class="img-editor-controls">
+            <input id="f_img" value="${textImg}" placeholder="رمز تعبيري (🌹) أو رابط صورة" />
+            <div class="img-editor-buttons">
+              <button type="button" class="btn btn-ghost btn-sm" id="f_upload_btn">📷 رفع صورة</button>
+              <button type="button" class="btn btn-danger btn-sm" id="f_remove_photo" style="display:none">إزالة الصورة</button>
+            </div>
+            <input type="file" id="f_img_file" accept="image/*" hidden />
+          </div>
+        </div>
+        <div class="hint">رمز تعبيري أو رابط صورة أو صورة مرفوعة (يُعاد ضبط حجمها تلقائيًا).</div>
+      </div>
+      <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-product="${editing?esc(editing.id):""}">حفظ</button></div>`;
+    setupImageEditor();
+    openFormModal(); setTimeout(()=>$("f_titleEn").focus(),50);
+  }
+  function effectiveFormImg() { if (formUploadedPhoto) return formUploadedPhoto; return $("f_img").value.trim() || "🛍️"; }
+  function updateFormImgPreview() {
+    const v = effectiveFormImg();
+    $("f_img_preview").innerHTML = isImgUrl(v) ? `<img src="${esc(v)}" alt="" />` : `<span>${esc(v)}</span>`;
+    $("f_remove_photo").style.display = formUploadedPhoto ? "" : "none";
+    $("f_upload_btn").textContent = formUploadedPhoto ? "📷 استبدال الصورة" : "📷 رفع صورة";
+  }
+  function setupImageEditor() {
+    updateFormImgPreview();
+    $("f_img").addEventListener("input", ()=>{ if (!formUploadedPhoto) updateFormImgPreview(); });
+    $("f_upload_btn").addEventListener("click", ()=>$("f_img_file").click());
+    $("f_remove_photo").addEventListener("click", ()=>{ formUploadedPhoto=null; updateFormImgPreview(); });
+    $("f_img_file").addEventListener("change", async (e)=>{
+      const file=e.target.files[0]; e.target.value="";
+      if (!file) return;
+      if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
+      if (file.size > 15*1024*1024) { toast("Image too large (max 15MB)"); return; }
+      try { formUploadedPhoto = await compressImage(file, 720, 0.72); updateFormImgPreview(); toast("Photo added"); }
+      catch (err) { toast("⚠️ Could not read that image"); }
+    });
+  }
+  function compressImage(file, maxDim, quality) {
+    return new Promise((resolve, reject)=>{
+      const reader=new FileReader(); reader.onerror=reject;
+      reader.onload=()=>{ const img=new Image(); img.onerror=reject;
+        img.onload=()=>{ let {width,height}=img;
+          if (width>=height && width>maxDim){ height=Math.round(height*maxDim/width); width=maxDim; }
+          else if (height>width && height>maxDim){ width=Math.round(width*maxDim/height); height=maxDim; }
+          const canvas=document.createElement("canvas"); canvas.width=width; canvas.height=height;
+          canvas.getContext("2d").drawImage(img,0,0,width,height);
+          resolve(canvas.toDataURL("image/jpeg", quality)); };
+        img.src=reader.result; };
+      reader.readAsDataURL(file);
+    });
+  }
+  function saveProduct(id) {
+    const titleEn=$("f_titleEn").value.trim(), titleAr=$("f_titleAr").value.trim();
+    const price=parseFloat($("f_price").value);
+    if (!titleEn && !titleAr) { toast("Add a title (EN or عربي)"); return; }
+    if (isNaN(price) || price<0) { toast("Enter a valid price"); return; }
+    const data={ titleEn, titleAr, descEn:$("f_descEn").value.trim(), descAr:$("f_descAr").value.trim(), price:Math.round(price*100)/100, categoryId:$("f_cat").value||null, img:effectiveFormImg() };
+    if (id) Object.assign(findProduct(id), data); else state.products.push({ id:uid("p"), viewCount:0, isFavorite:false, ...data });
+    saveData(); closeFormModal(); renderAdmin(); renderTabBar(); renderMenu(); renderCart();
+    toast(id?"Product updated":"Product added");
+  }
+  function toggleFavorite(id) {
+    const p=findProduct(id); if (!p) return;
+    p.isFavorite=!p.isFavorite; saveData(); renderAdminProducts();
+    if (currentProductId) renderProduct(currentProductId);
+    toast(p.isFavorite?"Marked favorite ★":"Removed favorite");
+  }
+  function deleteProduct(id) {
+    const p=findProduct(id); if (!p) return;
+    if (!confirm(`حذف "${prodName(p)}"؟ لا يمكن التراجع عن هذا.`)) return;
+    state.products=state.products.filter((x)=>x.id!==id); delete cart[id];
+    state.ads.forEach((a)=>{ if (a.linkProductId===id){ a.linkProductId=null; a.linkType="none"; } });
+    if (currentProductId===id) closeProduct();
+    saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Product deleted");
+  }
+
+  /* ================================================================
+     ADMIN — category form
+     ================================================================ */
+  function openCategoryForm(id) {
+    const editing = id ? findCategory(id) : null;
+    $("formCard").innerHTML = `
+      <h3>${editing?"تعديل فئة":"إضافة فئة"}</h3>
+      <div class="field-2">
+        <div class="field"><label>الاسم (إنجليزي)</label><input id="f_cnameEn" value="${editing?esc(editing.nameEn):""}" placeholder="Perfumes & Oils" /></div>
+        <div class="field"><label>الاسم (عربي)</label><input id="f_cnameAr" dir="rtl" value="${editing?esc(editing.nameAr):""}" placeholder="العطور والزيوت" /></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-category="${editing?esc(editing.id):""}">حفظ</button></div>`;
+    openFormModal(); setTimeout(()=>$("f_cnameEn").focus(),50);
+  }
+  function saveCategory(id) {
+    const nameEn=$("f_cnameEn").value.trim(), nameAr=$("f_cnameAr").value.trim();
+    if (!nameEn && !nameAr) { toast("Add a name (EN or عربي)"); return; }
+    if (id) { const c=findCategory(id); c.nameEn=nameEn; c.nameAr=nameAr; } else state.categories.push({ id:uid("c"), nameEn, nameAr });
+    saveData(); closeFormModal(); renderAdmin(); renderTabBar(); renderMenu(); toast(id?"Category updated":"Category added");
+  }
+  function deleteCategory(id) {
+    const c=findCategory(id); if (!c) return;
+    const n=state.products.filter((p)=>p.categoryId===id).length;
+    const msg = n>0 ? `حذف "${pick(c.nameEn,c.nameAr)}"؟ سيتم نقل ${n} ${n===1?"منتج":"منتجات"} إلى "أخرى".` : `حذف "${pick(c.nameEn,c.nameAr)}"؟`;
+    if (!confirm(msg)) return;
+    state.categories=state.categories.filter((x)=>x.id!==id);
+    state.products.forEach((p)=>{ if (p.categoryId===id) p.categoryId=null; });
+    state.ads.forEach((a)=>{ if (a.linkCategoryId===id){ a.linkCategoryId=null; a.linkType="none"; } });
+    saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); toast("Category deleted");
+  }
+
+  /* ================================================================
+     ADMIN — ad form
+     ================================================================ */
+  function openAdForm(id) {
+    const editing = id ? findAd(id) : null;
+    adUploadedPhoto = editing && editing.img ? editing.img : null;
+    const lt = editing ? (editing.linkType || "none") : "none";
+    const catOpts = state.categories.map((c)=>`<option value="${esc(c.id)}" ${editing && editing.linkCategoryId===c.id?"selected":""}>${esc(pick(c.nameEn,c.nameAr))}</option>`).join("");
+    const prodOpts = state.products.map((p)=>`<option value="${esc(p.id)}" ${editing && editing.linkProductId===p.id?"selected":""}>${esc(prodName(p))}</option>`).join("");
+    $("formCard").innerHTML = `
+      <h3>${editing?"تعديل إعلان":"إضافة إعلان"}</h3>
+      <div class="field-2">
+        <div class="field"><label>العنوان (إنجليزي)</label><input id="fa_titleEn" value="${editing?esc(editing.titleEn):""}" placeholder="Hot Deals" /></div>
+        <div class="field"><label>العنوان (عربي)</label><input id="fa_titleAr" dir="rtl" value="${editing?esc(editing.titleAr):""}" placeholder="عروض ساخنة" /></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>العنوان الفرعي (إنجليزي)</label><input id="fa_subEn" value="${editing?esc(editing.subEn):""}" placeholder="Discounts on selected spices" /></div>
+        <div class="field"><label>العنوان الفرعي (عربي)</label><input id="fa_subAr" dir="rtl" value="${editing?esc(editing.subAr):""}" placeholder="تخفيضات على البهارات" /></div>
+      </div>
+      <div class="field">
+        <label>صورة الخلفية (اختياري — تُلغي الألوان)</label>
+        <div class="img-editor">
+          <div class="img-preview" id="fa_img_preview"></div>
+          <div class="img-editor-controls">
+            <div class="img-editor-buttons">
+              <button type="button" class="btn btn-ghost btn-sm" id="fa_upload_btn">📷 رفع صورة</button>
+              <button type="button" class="btn btn-danger btn-sm" id="fa_remove_photo" style="display:none">إزالة الصورة</button>
+            </div>
+            <input type="file" id="fa_img_file" accept="image/*" hidden />
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>ألوان التدرج (تُستخدم عند عدم وجود صورة)</label>
+        <div class="color-row">
+          <div><input id="fa_g1" type="color" value="${editing?esc(editing.g1||"#B71C1C"):"#B71C1C"}" /></div>
+          <div><input id="fa_g2" type="color" value="${editing?esc(editing.g2||"#EF5350"):"#EF5350"}" /></div>
+        </div>
+      </div>
+      <div class="field"><label>إجراء النقر</label>
+        <select id="fa_linkType">
+          <option value="none" ${lt==="none"?"selected":""}>لا شيء (التمرير إلى القائمة)</option>
+          <option value="category" ${lt==="category"?"selected":""}>فتح قسم (فئة)</option>
+          <option value="product" ${lt==="product"?"selected":""}>فتح صفحة منتج</option>
+          <option value="url" ${lt==="url"?"selected":""}>فتح رابط (صفحة جديدة)</option>
+        </select>
+      </div>
+      <div class="field" id="fa_cat_field" style="display:${lt==="category"?"":"none"}"><label>القسم</label><select id="fa_linkCat"><option value="">— اختر —</option>${catOpts}</select></div>
+      <div class="field" id="fa_prod_field" style="display:${lt==="product"?"":"none"}"><label>المنتج</label><select id="fa_linkProd"><option value="">— اختر —</option>${prodOpts}</select></div>
+      <div class="field" id="fa_url_field" style="display:${lt==="url"?"":"none"}"><label>الرابط</label><input id="fa_linkUrl" value="${editing?esc(editing.linkUrl||""):""}" placeholder="https://…" /></div>
+      <div class="check-field"><input type="checkbox" id="fa_active" ${!editing || editing.active!==false?"checked":""} /><label for="fa_active">إظهار هذا الإعلان في السلايدر</label></div>
+      <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-ad="${editing?esc(editing.id):""}">حفظ</button></div>`;
+    setupAdImageEditor();
+    $("fa_linkType").addEventListener("change", (e)=>{
+      const v=e.target.value;
+      $("fa_cat_field").style.display = v==="category"?"":"none";
+      $("fa_prod_field").style.display = v==="product"?"":"none";
+      $("fa_url_field").style.display = v==="url"?"":"none";
+    });
+    openFormModal(); setTimeout(()=>$("fa_titleEn").focus(),50);
+  }
+  function updateAdImgPreview() {
+    const box=$("fa_img_preview");
+    if (adUploadedPhoto) box.style.backgroundImage = `url('${adUploadedPhoto}')`;
+    else { box.style.backgroundImage=""; box.innerHTML="🖼️"; }
+    box.innerHTML = adUploadedPhoto ? "" : "🖼️";
+    $("fa_remove_photo").style.display = adUploadedPhoto ? "" : "none";
+    $("fa_upload_btn").textContent = adUploadedPhoto ? "📷 استبدال الصورة" : "📷 رفع صورة";
+  }
+  function setupAdImageEditor() {
+    updateAdImgPreview();
+    $("fa_upload_btn").addEventListener("click", ()=>$("fa_img_file").click());
+    $("fa_remove_photo").addEventListener("click", ()=>{ adUploadedPhoto=null; updateAdImgPreview(); });
+    $("fa_img_file").addEventListener("change", async (e)=>{
+      const file=e.target.files[0]; e.target.value="";
+      if (!file) return;
+      if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
+      if (file.size > 15*1024*1024) { toast("Image too large (max 15MB)"); return; }
+      try { adUploadedPhoto = await compressImage(file, 1000, 0.72); updateAdImgPreview(); toast("Photo added"); }
+      catch (err) { toast("⚠️ Could not read that image"); }
+    });
+  }
+  function saveAd(id) {
+    const titleEn=$("fa_titleEn").value.trim(), titleAr=$("fa_titleAr").value.trim();
+    if (!titleEn && !titleAr) { toast("Add a title (EN or عربي)"); return; }
+    const linkType=$("fa_linkType").value;
+    const data={ titleEn, titleAr, subEn:$("fa_subEn").value.trim(), subAr:$("fa_subAr").value.trim(),
+      g1:$("fa_g1").value, g2:$("fa_g2").value, img:adUploadedPhoto||null, linkType,
+      linkCategoryId: linkType==="category" ? ($("fa_linkCat").value||null) : null,
+      linkProductId: linkType==="product" ? ($("fa_linkProd").value||null) : null,
+      linkUrl: linkType==="url" ? $("fa_linkUrl").value.trim() : "", active:$("fa_active").checked };
+    if (id) Object.assign(findAd(id), data); else state.ads.push({ id:uid("a"), ...data });
+    saveData(); closeFormModal(); renderAdminAds(); renderPromos(); toast(id?"Ad updated":"Ad added");
+  }
+  function deleteAd(id) {
+    const a=findAd(id); if (!a) return;
+    if (!confirm(`حذف هذا الإعلان "${pick(a.titleEn,a.titleAr)||"(بدون عنوان)"}"؟`)) return;
+    state.ads=state.ads.filter((x)=>x.id!==id);
+    saveData(); renderAdminAds(); renderPromos(); toast("Ad deleted");
+  }
+
+  /* ================================================================
+     ADMIN — data tools
+     ================================================================ */
+  function exportData() {
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download="sham-store-catalog.json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast("Exported catalog");
+  }
+  function importData(file) {
+    const reader=new FileReader();
+    reader.onload=()=>{ try {
+      const parsed=JSON.parse(reader.result);
+      if (!parsed || !Array.isArray(parsed.products) || !Array.isArray(parsed.categories)) throw new Error("bad shape");
+      state=migrate(parsed); saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Catalog imported");
+    } catch (e) { toast("⚠️ Invalid catalog file"); } };
+    reader.readAsText(file);
+  }
+  function resetData() {
+    if (!confirm("إعادة ضبط القائمة بالكامل إلى النسخة التجريبية الافتراضية؟ ستفقد تغييراتك.")) return;
+    state=JSON.parse(JSON.stringify(DEFAULT_DATA)); saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Reset to demo");
+  }
+  const openFormModal = () => $("formModal").classList.add("open");
+  const closeFormModal = () => $("formModal").classList.remove("open");
+
+  /* ================================================================
+     EVENT WIRING
+     ================================================================ */
+  $("langBtn").addEventListener("click", toggleLang);
+  $("themeBtn").addEventListener("click", toggleTheme);
+  $("searchInput").addEventListener("input", (e)=>{
+    searchQuery = e.target.value;
+    renderTabBar(); renderMenu();
+  });
+  $("searchInput").addEventListener("focus", updateSearchExpand);
+  $("searchInput").addEventListener("blur", updateSearchExpand);
+  $("searchIconBtn").addEventListener("click", ()=>{
+    const box = $("searchBox");
+    if (box.classList.contains("open")) { $("searchInput").focus(); return; }
+    searchForceOpen = true;
+    box.classList.add("open");
+    window.scrollTo({ top: tabbarTargetTop(), behavior:"smooth" });
+    setTimeout(()=>{ searchForceOpen = false; $("searchInput").focus(); updateSearchExpand(); }, 700);
+  });
+  $("tabbar").addEventListener("click", (e)=>{ const tb=e.target.closest(".tab"); if (!tb) return; goToCategory(tb.dataset.target); });
+  $("menuRoot").addEventListener("click", (e)=>{ const b=e.target.closest("[data-add]"); if (b) { addToCart(b.dataset.add); return; } const o=e.target.closest("[data-open]"); if (o) openProduct(o.dataset.open); });
+  $("cartItems").addEventListener("click", (e)=>{ const inc=e.target.closest("[data-inc]"), dec=e.target.closest("[data-dec]"), rem=e.target.closest("[data-remove]"); if (inc) changeQty(inc.dataset.inc,+1); if (dec) changeQty(dec.dataset.dec,-1); if (rem) removeItem(rem.dataset.remove); });
+  $("cartBtn").addEventListener("click", openCart);
+  $("closeBtn").addEventListener("click", closeCart);
+  $("overlay").addEventListener("click", closeCart);
+  $("checkoutBtn").addEventListener("click", checkout);
+  $("psBack").addEventListener("click", closeProduct);
+  $("psCart").addEventListener("click", openCart);
+  $("productBody").addEventListener("click", (e)=>{
+    const add=e.target.closest("[data-ps-add]"), inc=e.target.closest("[data-ps-inc]"), dec=e.target.closest("[data-ps-dec]"), co=e.target.closest("[data-ps-checkout]");
+    if (add) addToCart(add.dataset.psAdd);
+    if (inc) changeQty(inc.dataset.psInc, +1);
+    if (dec) changeQty(dec.dataset.psDec, -1);
+    if (co) checkout();
+    const mini=e.target.closest("[data-open-mini]"); if (mini) openProduct(mini.dataset.openMini);
+  });
+  window.addEventListener("hashchange", handleHash);
+
+  document.querySelector(".admin-tabs").addEventListener("click", (e)=>{ const btn=e.target.closest("[data-tab]"); if (!btn) return; document.querySelectorAll(".admin-tabs button").forEach((b)=>b.classList.remove("active")); document.querySelectorAll(".admin-pane").forEach((p)=>p.classList.remove("active")); btn.classList.add("active"); $("pane-"+btn.dataset.tab).classList.add("active"); });
+  $("adminClose").addEventListener("click", closeAdmin);
+  $("addProductBtn").addEventListener("click", ()=>openProductForm(null));
+  $("addCategoryBtn").addEventListener("click", ()=>openCategoryForm(null));
+  $("addAdBtn").addEventListener("click", ()=>openAdForm(null));
+  $("adminProductList").addEventListener("click", (e)=>{ const fv=e.target.closest("[data-fav-product]"), ed=e.target.closest("[data-edit-product]"), dl=e.target.closest("[data-del-product]"); if (fv) toggleFavorite(fv.dataset.favProduct); if (ed) openProductForm(ed.dataset.editProduct); if (dl) deleteProduct(dl.dataset.delProduct); });
+  $("adminCategoryList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-category]"), dl=e.target.closest("[data-del-category]"); if (ed) openCategoryForm(ed.dataset.editCategory); if (dl) deleteCategory(dl.dataset.delCategory); });
+  $("adminAdList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-ad]"), dl=e.target.closest("[data-del-ad]"); if (ed) openAdForm(ed.dataset.editAd); if (dl) deleteAd(dl.dataset.delAd); });
+  $("formCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-form-cancel]")) { closeFormModal(); return; } const sp=e.target.closest("[data-save-product]"), sc=e.target.closest("[data-save-category]"), sa=e.target.closest("[data-save-ad]"); if (sp) saveProduct(sp.dataset.saveProduct||null); if (sc) saveCategory(sc.dataset.saveCategory||null); if (sa) saveAd(sa.dataset.saveAd||null); });
+  $("formModal").addEventListener("click", (e)=>{ if (e.target===$("formModal")) closeFormModal(); });
+  $("exportBtn").addEventListener("click", exportData);
+  $("importBtn").addEventListener("click", ()=>$("importFile").click());
+  $("importFile").addEventListener("change", (e)=>{ if (e.target.files[0]) importData(e.target.files[0]); e.target.value=""; });
+  $("resetBtn").addEventListener("click", resetData);
+
+  let pressTimer;
+  const brand=$("brand");
+  brand.addEventListener("pointerdown", ()=>{ pressTimer=setTimeout(openPinModal,1000); });
+  brand.addEventListener("pointerup", ()=>clearTimeout(pressTimer));
+  brand.addEventListener("pointerleave", ()=>clearTimeout(pressTimer));
+  function openPinModal() { $("pinInput").value=""; $("pinError").textContent=""; $("pinModal").classList.add("open"); setTimeout(()=>$("pinInput").focus(),50); }
+  const closePinModal = () => $("pinModal").classList.remove("open");
+  function submitPin() { if ($("pinInput").value===ADMIN_PIN) { closePinModal(); openAdmin(); } else { $("pinError").textContent="رمز غير صحيح"; $("pinInput").value=""; } }
+  $("pinSubmit").addEventListener("click", submitPin);
+  $("pinCancel").addEventListener("click", closePinModal);
+  $("pinInput").addEventListener("keydown", (e)=>{ if (e.key==="Enter") submitPin(); });
+  document.addEventListener("keydown", (e)=>{ if (e.key!=="Escape") return; if ($("pinModal").classList.contains("open")) return closePinModal(); if ($("formModal").classList.contains("open")) return closeFormModal(); if ($("adminScreen").classList.contains("open")) return closeAdmin(); if ($("cartPanel").classList.contains("open")) return closeCart(); });
+
+  /* ---------- Init ---------- */
+  applyTheme((()=>{ try { return localStorage.getItem(THEME_KEY)||"light"; } catch (e) { return "light"; } })());
+  initPromoAutoSlide();
+  setLang((()=>{ try { return localStorage.getItem(LANG_KEY)||"ar"; } catch (e) { return "ar"; } })());
+  handleHash();
+  updateSearchExpand();
+  </script>
+</body>
+</html>
