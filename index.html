@@ -101,7 +101,7 @@
     .card { cursor:pointer; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 8px var(--card-sh); transition:transform .15s ease, box-shadow .2s ease; }
     .card:hover { transform:translateY(-3px); box-shadow:0 8px 22px var(--card-sh); }
     .thumb { aspect-ratio:1/1; display:grid; place-items:center; font-size:2.6rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
-    .thumb img { width:100%; height:100%; object-fit:cover; }
+    .thumb img { width:100%; height:100%; object-fit:var(--thumb-fit, cover); }
     .card .body { padding:11px 12px 13px; display:flex; flex-direction:column; gap:5px; flex:1; }
     .card h3 { margin:0; font-size:.96rem; line-height:1.25; }
     .card .desc { margin:0; color:var(--muted); font-size:.8rem; flex:1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -364,6 +364,13 @@
               <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowPrices" /> إظهار الأسعار</label>
               <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowBasket" /> إظهار السلة</label>
             </div>
+            <div class="field" style="margin-top:16px;max-width:340px;">
+              <label>طريقة عرض صور المنتجات في الصفحة الرئيسية</label>
+              <select id="setImageFit">
+                <option value="cover">تعبئة (قص الصورة لملء المربع)</option>
+                <option value="contain">احتواء (عرض الصورة كاملة بدون قص)</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -422,7 +429,7 @@
   };
 
   /* ---------- State ---------- */
-  let state = { categories: [], products: [], ads: [], settings: { showPrices: true, showBasket: true } };
+  let state = { categories: [], products: [], ads: [], settings: { showPrices: true, showBasket: true, imageFit: "cover" } };
   let lang = "ar";
   let accessToken = null;
   let searchQuery = "";
@@ -469,8 +476,8 @@
   const productToRow = (p) => ({ title_en:p.titleEn, title_ar:p.titleAr, desc_en:p.descEn, desc_ar:p.descAr, price:p.price, sale_price:(p.salePrice!=null?p.salePrice:null), unit:(p.unit||null), img:p.img, category_id:p.categoryId });
   const rowToCategory = (r) => ({ id:r.id, nameEn:r.name_en||"", nameAr:r.name_ar||"" });
   const categoryToRow = (c) => ({ name_en:c.nameEn, name_ar:c.nameAr });
-  const rowToSettings = (r) => ({ showPrices:r.show_prices!==false, showBasket:r.show_basket!==false });
-  const settingsToRow = (s) => ({ show_prices:!!s.showPrices, show_basket:!!s.showBasket });
+  const rowToSettings = (r) => ({ showPrices:r.show_prices!==false, showBasket:r.show_basket!==false, imageFit:(r.image_fit==="contain"?"contain":"cover") });
+  const settingsToRow = (s) => ({ show_prices:!!s.showPrices, show_basket:!!s.showBasket, image_fit:(s.imageFit==="contain"?"contain":"cover") });
   const rowToAd = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", subEn:r.sub_en||"", subAr:r.sub_ar||"", g1:r.g1||"#B71C1C", g2:r.g2||"#EF5350", img:r.img||null, linkType:r.link_type||"none", linkCategoryId:r.link_category_id||null, linkProductId:r.link_product_id||null, linkUrl:r.link_url||"", active:r.active!==false });
   const adToRow = (a) => ({ title_en:a.titleEn, title_ar:a.titleAr, sub_en:a.subEn, sub_ar:a.subAr, g1:a.g1, g2:a.g2, img:a.img, link_type:a.linkType, link_category_id:a.linkCategoryId, link_product_id:a.linkProductId, link_url:a.linkUrl, active:a.active });
 
@@ -523,19 +530,23 @@
       if (rows && rows[0]) state.settings = rowToSettings(rows[0]);
     } catch (e) {}
   }
-  const renderAll = () => { applyBasketVisibility(); renderPromos(); renderTabBar(); renderMenu(); renderCart(); if (currentProductId) renderProduct(currentProductId); };
+  const renderAll = () => { applyBasketVisibility(); applyImageFit(); renderPromos(); renderTabBar(); renderMenu(); renderCart(); if (currentProductId) renderProduct(currentProductId); };
   function applyBasketVisibility() {
     const show = basketVisible();
     if ($("cartBtn")) $("cartBtn").style.display = show ? "" : "none";
     if ($("psCart")) $("psCart").style.display = show ? "" : "none";
     if (!show) closeCart();
   }
+  function applyImageFit() {
+    document.documentElement.style.setProperty("--thumb-fit", state.settings.imageFit === "contain" ? "contain" : "cover");
+  }
   async function saveSettings() {
     await sbUpdate("settings", 1, settingsToRow(state.settings));
   }
-  function updateSettingsFromCheckboxes() {
+  function updateSettingsFromControls() {
     state.settings.showPrices = $("setShowPrices").checked;
     state.settings.showBasket = $("setShowBasket").checked;
+    state.settings.imageFit = $("setImageFit").value;
     saveSettings().catch((e)=>alert("فشل حفظ الإعدادات: " + e.message));
     renderAll();
   }
@@ -868,6 +879,7 @@
   function renderAdmin() {
     $("setShowPrices").checked = state.settings.showPrices;
     $("setShowBasket").checked = state.settings.showBasket;
+    $("setImageFit").value = state.settings.imageFit === "contain" ? "contain" : "cover";
     renderAdminDashboard(); renderAdminProducts(); renderAdminCategories(); renderAdminAds();
   }
 
@@ -1244,8 +1256,9 @@
   $("adminProductList").addEventListener("click", (e)=>{ const fv=e.target.closest("[data-fav-product]"), ed=e.target.closest("[data-edit-product]"), dl=e.target.closest("[data-del-product]"); if (fv) toggleFavorite(fv.dataset.favProduct); if (ed) openProductForm(ed.dataset.editProduct); if (dl) deleteProduct(dl.dataset.delProduct); });
   $("adminCategoryList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-category]"), dl=e.target.closest("[data-del-category]"); if (ed) openCategoryForm(ed.dataset.editCategory); if (dl) deleteCategory(dl.dataset.delCategory); });
   $("adminAdList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-ad]"), dl=e.target.closest("[data-del-ad]"); if (ed) openAdForm(ed.dataset.editAd); if (dl) deleteAd(dl.dataset.delAd); });
-  $("setShowPrices").addEventListener("change", updateSettingsFromCheckboxes);
-  $("setShowBasket").addEventListener("change", updateSettingsFromCheckboxes);
+  $("setShowPrices").addEventListener("change", updateSettingsFromControls);
+  $("setShowBasket").addEventListener("change", updateSettingsFromControls);
+  $("setImageFit").addEventListener("change", updateSettingsFromControls);
   $("formCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-form-cancel]")) { closeFormModal(); return; } const sp=e.target.closest("[data-save-product]"), sc=e.target.closest("[data-save-category]"), sa=e.target.closest("[data-save-ad]"); if (sp) saveProduct(sp.dataset.saveProduct||null); if (sc) saveCategory(sc.dataset.saveCategory||null); if (sa) saveAd(sa.dataset.saveAd||null); });
 
   // admin access: long-press logo → login (or straight to admin if already signed in)
