@@ -320,6 +320,10 @@
     </div>
     <div class="admin-body">
       <div class="warn-note">ℹ️ التغييرات هنا تُنشر مباشرةً لجميع الزوار عبر قاعدة البيانات السحابية.</div>
+      <div class="admin-bar" style="margin-bottom:18px;">
+        <h3 style="font-size:.9rem;color:var(--muted)">استيراد نسخة احتياطية (JSON)</h3>
+        <div><button class="btn btn-ghost btn-sm" id="importBtn">⬆ استيراد JSON</button><input type="file" id="importFile" accept="application/json" hidden /></div>
+      </div>
       <div class="admin-pane active" id="pane-products">
         <div class="admin-bar"><h3>المنتجات</h3><button class="btn btn-primary btn-sm" id="addProductBtn">+ إضافة منتج</button></div>
         <div id="adminProductList"></div>
@@ -1034,6 +1038,81 @@
   const closeFormModal = () => $("formModal").classList.remove("open");
 
   /* ================================================================
+     ADMIN — import a JSON backup (from the old local version, or an
+     export taken from this admin) into the shared Supabase database.
+     Old numeric/local ids are remapped to the new Supabase ids, and any
+     embedded base64 (data:) photos are re-uploaded to Storage.
+     ================================================================ */
+  function dataUrlToBlob(dataUrl) {
+    const [meta, b64] = dataUrl.split(",");
+    const mime = (meta.match(/data:([^;]+);/) || [])[1] || "image/png";
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  async function resolveImportImage(img, maxDim) {
+    if (typeof img === "string" && img.startsWith("data:")) {
+      try { const blob = await compressImage(dataUrlToBlob(img), maxDim, 0.72); return await sbUploadImage(blob); }
+      catch (e) { return null; }
+    }
+    return img || null;
+  }
+  async function importCatalog(file) {
+    if (!accessToken) { alert("سجّل الدخول أولاً"); return; }
+    let data;
+    try { data = JSON.parse(await file.text()); }
+    catch (e) { alert("ملف JSON غير صالح"); return; }
+    const cats = Array.isArray(data.categories) ? data.categories : [];
+    const prods = Array.isArray(data.products) ? data.products : [];
+    const ads = Array.isArray(data.ads) ? data.ads : [];
+    if (!cats.length && !prods.length && !ads.length) { alert("الملف لا يحتوي على بيانات صالحة للاستيراد"); return; }
+    if (!confirm(`سيتم إضافة ${cats.length} فئة و${prods.length} منتج و${ads.length} إعلان إلى القائمة الحالية.\nشغّل هذا مرة واحدة فقط لتجنّب تكرار العناصر. متابعة؟`)) return;
+
+    const btn = $("importBtn"); const label = btn.textContent; btn.disabled = true;
+    const catMap = {}, prodMap = {};
+    try {
+      for (let i = 0; i < cats.length; i++) {
+        btn.textContent = `جارٍ الاستيراد… الفئات ${i + 1}/${cats.length}`;
+        const c = cats[i];
+        const [row] = await sbInsert("categories", categoryToRow({ nameEn: c.nameEn || "", nameAr: c.nameAr || "" }));
+        catMap[c.id] = row.id;
+      }
+      for (let i = 0; i < prods.length; i++) {
+        btn.textContent = `جارٍ الاستيراد… المنتجات ${i + 1}/${prods.length}`;
+        const p = prods[i];
+        const img = await resolveImportImage(p.img, 900);
+        const row = productToRow({
+          titleEn: p.titleEn || "", titleAr: p.titleAr || "", descEn: p.descEn || "", descAr: p.descAr || "",
+          price: Number(p.price) || 0, categoryId: (p.categoryId && catMap[p.categoryId]) || null, img: img || "🛍️",
+        });
+        const [saved] = await sbInsert("products", row);
+        prodMap[p.id] = saved.id;
+      }
+      for (let i = 0; i < ads.length; i++) {
+        btn.textContent = `جارٍ الاستيراد… الإعلانات ${i + 1}/${ads.length}`;
+        const a = ads[i];
+        const img = a.img ? await resolveImportImage(a.img, 1000) : null;
+        const row = adToRow({
+          titleEn: a.titleEn || "", titleAr: a.titleAr || "", subEn: a.subEn || "", subAr: a.subAr || "",
+          g1: a.g1 || "#B71C1C", g2: a.g2 || "#EF5350", img,
+          linkType: a.linkType || "none",
+          linkCategoryId: (a.linkType === "category" && a.linkCategoryId && catMap[a.linkCategoryId]) || null,
+          linkProductId: (a.linkType === "product" && a.linkProductId && prodMap[a.linkProductId]) || null,
+          linkUrl: a.linkUrl || "", active: a.active !== false,
+        });
+        await sbInsert("ads", row);
+      }
+      btn.disabled = false; btn.textContent = label;
+      await reload();
+      alert(`تم الاستيراد بنجاح: ${cats.length} فئة، ${prods.length} منتج، ${ads.length} إعلان.`);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = label;
+      alert("حدث خطأ أثناء الاستيراد: " + e.message + "\n\nقد تكون بعض العناصر قد أُضيفت جزئيًا قبل حدوث الخطأ.");
+    }
+  }
+
+  /* ================================================================
      BOOT / loading / setup screens
      ================================================================ */
   function showBoot(kind, detail) {
@@ -1091,6 +1170,8 @@
   $("adminProductList").addEventListener("click", (e)=>{ const fv=e.target.closest("[data-fav-product]"), ed=e.target.closest("[data-edit-product]"), dl=e.target.closest("[data-del-product]"); if (fv) toggleFavorite(fv.dataset.favProduct); if (ed) openProductForm(ed.dataset.editProduct); if (dl) deleteProduct(dl.dataset.delProduct); });
   $("adminCategoryList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-category]"), dl=e.target.closest("[data-del-category]"); if (ed) openCategoryForm(ed.dataset.editCategory); if (dl) deleteCategory(dl.dataset.delCategory); });
   $("adminAdList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-ad]"), dl=e.target.closest("[data-del-ad]"); if (ed) openAdForm(ed.dataset.editAd); if (dl) deleteAd(dl.dataset.delAd); });
+  $("importBtn").addEventListener("click", ()=>$("importFile").click());
+  $("importFile").addEventListener("change", (e)=>{ if (e.target.files[0]) importCatalog(e.target.files[0]); e.target.value=""; });
   $("formCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-form-cancel]")) { closeFormModal(); return; } const sp=e.target.closest("[data-save-product]"), sc=e.target.closest("[data-save-category]"), sa=e.target.closest("[data-save-ad]"); if (sp) saveProduct(sp.dataset.saveProduct||null); if (sc) saveCategory(sc.dataset.saveCategory||null); if (sa) saveAd(sa.dataset.saveAd||null); });
   $("formModal").addEventListener("click", (e)=>{ if (e.target===$("formModal")) closeFormModal(); });
 
