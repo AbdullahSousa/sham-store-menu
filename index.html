@@ -184,8 +184,9 @@
     /* ============ ADMIN ============ */
     .admin-screen { position:fixed; inset:0; z-index:80; background:var(--bg); display:none; flex-direction:column; }
     .admin-screen.open { display:flex; }
-    .admin-top { background:var(--app-grad); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .admin-top { background:var(--app-grad); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .admin-top h2 { margin:0; font-size:1.15rem; }
+    .admin-top .at-actions { display:flex; gap:8px; flex:none; }
     .admin-tabs { display:flex; gap:4px; background:var(--surface); border-bottom:1px solid var(--line); padding:0 12px; }
     .admin-tabs button { background:none; border:none; padding:14px 16px; font-size:.95rem; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; }
     .admin-tabs button.active { color:var(--primary); border-bottom-color:var(--primary); }
@@ -230,17 +231,28 @@
     .check-field label { margin:0; }
     .form-actions { display:flex; gap:10px; margin-top:8px; }
     .form-actions .btn { flex:1; padding:13px; }
-    .admin-footer { border-top:1px solid var(--line); margin-top:24px; padding-top:18px; }
-    .admin-footer h4 { margin:0 0 4px; }
-    .admin-footer p { margin:0 0 12px; color:var(--muted); font-size:.82rem; }
-    .admin-footer .row { display:flex; gap:10px; flex-wrap:wrap; }
     .warn-note { background:color-mix(in srgb, var(--accent) 20%, var(--surface)); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px 12px; font-size:.8rem; margin-bottom:16px; }
-    .pin-modal { position:fixed; inset:0; z-index:100; background:rgba(20,25,15,.55); display:none; align-items:center; justify-content:center; padding:20px; }
-    .pin-modal.open { display:flex; }
-    .pin-card { background:var(--bg); border-radius:18px; padding:24px; width:min(340px,100%); text-align:center; }
-    .pin-card h3 { margin:0 0 6px; } .pin-card p { margin:0 0 16px; color:var(--muted); font-size:.85rem; }
-    .pin-card input { width:100%; text-align:center; letter-spacing:8px; font-size:1.4rem; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); }
-    .pin-error { color:var(--danger); font-size:.82rem; min-height:18px; margin:8px 0 0; }
+
+    /* ============ LOGIN (replaces the old client-side PIN) ============ */
+    .login-modal { position:fixed; inset:0; z-index:100; background:rgba(20,25,15,.55); display:none; align-items:center; justify-content:center; padding:20px; }
+    .login-modal.open { display:flex; }
+    .login-card { background:var(--bg); border-radius:18px; padding:24px; width:min(360px,100%); }
+    .login-card h3 { margin:0 0 6px; text-align:center; }
+    .login-card p { margin:0 0 16px; color:var(--muted); font-size:.85rem; text-align:center; }
+    .login-card input { width:100%; font-size:1rem; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); margin-bottom:10px; }
+    .login-error { color:var(--danger); font-size:.82rem; min-height:18px; margin:2px 0 8px; text-align:center; }
+
+    /* ============ BOOT (loading / setup / error) ============ */
+    .boot { position:fixed; inset:0; z-index:200; background:var(--bg); display:none; align-items:center; justify-content:center; padding:24px; }
+    .boot.open { display:flex; }
+    .boot-card { max-width:460px; text-align:center; }
+    .boot-card .b-logo { font-size:2.4rem; margin-bottom:10px; }
+    .boot-card h2 { margin:0 0 8px; color:var(--secondary); }
+    :root[data-theme="dark"] .boot-card h2 { color:var(--ink); }
+    .boot-card p { color:var(--muted); line-height:1.6; margin:0 0 8px; }
+    .boot-card code { background:color-mix(in srgb, var(--accent) 22%, var(--surface)); padding:2px 6px; border-radius:6px; font-size:.85rem; }
+    .spinner { width:34px; height:34px; border:4px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 14px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body data-lang="ar">
@@ -297,14 +309,17 @@
 
   <!-- ============================ ADMIN ============================ -->
   <div class="admin-screen" id="adminScreen">
-    <div class="admin-top"><h2>⚙️ الإدارة — إدارة القائمة</h2><button class="btn btn-ghost btn-sm" id="adminClose">تم</button></div>
+    <div class="admin-top">
+      <h2>⚙️ الإدارة — إدارة القائمة</h2>
+      <div class="at-actions"><button class="btn btn-ghost btn-sm" id="adminLogout">تسجيل الخروج</button><button class="btn btn-ghost btn-sm" id="adminClose">تم</button></div>
+    </div>
     <div class="admin-tabs">
       <button data-tab="products" class="active">المنتجات</button>
       <button data-tab="categories">الفئات</button>
       <button data-tab="ads">الإعلانات</button>
     </div>
     <div class="admin-body">
-      <div class="warn-note">ℹ️ يتم حفظ التغييرات في <b>هذا المتصفح فقط</b> (التخزين المحلي). لنشرها للعملاء، استخدم <b>تصدير</b> أدناه، ثم استوردها على الأجهزة الأخرى أو أدرج الملف ضمن الاستضافة.</div>
+      <div class="warn-note">ℹ️ التغييرات هنا تُنشر مباشرةً لجميع الزوار عبر قاعدة البيانات السحابية.</div>
       <div class="admin-pane active" id="pane-products">
         <div class="admin-bar"><h3>المنتجات</h3><button class="btn btn-primary btn-sm" id="addProductBtn">+ إضافة منتج</button></div>
         <div id="adminProductList"></div>
@@ -317,98 +332,70 @@
         <div class="admin-bar"><h3>لافتات الإعلانات</h3><button class="btn btn-primary btn-sm" id="addAdBtn">+ إضافة إعلان</button></div>
         <div id="adminAdList"></div>
       </div>
-      <div class="admin-footer">
-        <h4>النسخ الاحتياطي والنقل</h4>
-        <p>صدّر قائمتك (المنتجات والفئات والإعلانات) كملف JSON، استورده على جهاز آخر، أو أعده إلى النسخة التجريبية الافتراضية.</p>
-        <div class="row">
-          <button class="btn btn-ghost btn-sm" id="exportBtn">⬇ تصدير JSON</button>
-          <button class="btn btn-ghost btn-sm" id="importBtn">⬆ استيراد JSON</button>
-          <button class="btn btn-danger btn-sm" id="resetBtn">↺ إعادة للنسخة التجريبية</button>
-          <input type="file" id="importFile" accept="application/json" hidden />
-        </div>
-      </div>
     </div>
   </div>
 
   <div class="form-modal" id="formModal"><div class="form-card" id="formCard"></div></div>
 
-  <div class="pin-modal" id="pinModal">
-    <div class="pin-card">
-      <h3>الدخول للإدارة</h3>
-      <p>أدخل الرمز المكوّن من 4 أرقام لإدارة القائمة.</p>
-      <input type="password" id="pinInput" inputmode="numeric" maxlength="4" autocomplete="off" />
-      <p class="pin-error" id="pinError"></p>
-      <div class="form-actions"><button class="btn btn-ghost" id="pinCancel">إلغاء</button><button class="btn btn-primary" id="pinSubmit">دخول</button></div>
+  <div class="login-modal" id="loginModal">
+    <div class="login-card">
+      <h3>دخول الإدارة</h3>
+      <p>سجّل الدخول لإدارة القائمة.</p>
+      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="username" />
+      <input type="password" id="loginPassword" placeholder="كلمة المرور" autocomplete="current-password" />
+      <p class="login-error" id="loginError"></p>
+      <div class="form-actions"><button class="btn btn-ghost" id="loginCancel">إلغاء</button><button class="btn btn-primary" id="loginSubmit">دخول</button></div>
     </div>
   </div>
+
+  <div class="boot" id="boot"><div class="boot-card" id="bootCard"></div></div>
 
   <!-- ============================ SCRIPT ============================ -->
   <script>
   /* ================================================================
      ⚠️  CONFIG
+       SUPABASE_URL / SUPABASE_ANON_KEY — from your Supabase project
+         (Project Settings → API). The anon key is public by design;
+         database security policies restrict writes to signed-in admins.
        WHATSAPP_NUMBER — full international format, DIGITS ONLY (no + / spaces).
-       ADMIN_PIN — opens admin (long-press the logo). Client-side only, NOT
-         real security — for real protection use your Django backend.
-       CURRENCY — ₪, shown before the amount (matches the kiosk).
+       Admin is opened by long-pressing the logo, then signing in with the
+       admin email/password created in Supabase Authentication → Users.
      ================================================================ */
   const SUPABASE_URL      = "https://sngsxxvkfhbofprvxaio.supabase.co";  // your Project URL
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuZ3N4eHZrZmhib2ZwcnZ4YWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MjIwMTIsImV4cCI6MjEwMTE5ODAxMn0.EtvsuUGPB5hLXX9xSQkaWq7BSIvX_s__FTt1xEEh2aE";
-  const WHATSAPP_NUMBER = "905528192778";   // <-- REPLACE THIS
-  const ADMIN_PIN       = "1234";            // <-- change this
+  const WHATSAPP_NUMBER = "905528192778";
   const CURRENCY        = "₪";
-  const STORAGE_KEY     = "shamstore_catalog_v1";
-  const THEME_KEY       = "shamstore_theme";
-  const LANG_KEY        = "shamstore_lang";
+  const THEME_KEY = "shamstore_theme", LANG_KEY = "shamstore_lang", TOKEN_KEY = "shamstore_admin_token";
+
+  const isConfigured = () => /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
 
   /* ---------- UI strings ---------- */
   const I18N = {
     en: { viewOffer:"View Offer", yourOrder:"Your Order", checkoutWa:"Checkout via WhatsApp",
       checkout:"Checkout", view:"View", total:"Total", each:"each", remove:"Remove", other:"Other",
-      emptyCart:"Your cart is empty.<br/>Add some items from the menu!", emptyMenu:"No products yet. Open the admin panel to add some.",
+      emptyCart:"Your cart is empty.<br/>Add some items from the menu!", emptyMenu:"No products yet.",
       added:"Added to order", orderHi:"Hello, I would like to order:", orderTotal:"Total", langBtn:"ع", addToCart:"Add to cart", related:"Related products", favorites:"Favorites", mostViewed:"Most viewed",
       searchPlaceholder:"Search products…", searchResults:"Search results", noResults:"No products match your search.",
       items:(n)=>`${n} item${n===1?"":"s"}` },
     ar: { viewOffer:"عرض التفاصيل", yourOrder:"طلبك", checkoutWa:"أتمم الطلب عبر واتساب",
       checkout:"إتمام", view:"عرض", total:"الإجمالي", each:"للحبة", remove:"إزالة", other:"أخرى",
-      emptyCart:"سلتك فارغة.<br/>أضف بعض المنتجات من القائمة!", emptyMenu:"لا توجد منتجات بعد. افتح لوحة الإدارة لإضافتها.",
+      emptyCart:"سلتك فارغة.<br/>أضف بعض المنتجات من القائمة!", emptyMenu:"لا توجد منتجات بعد.",
       added:"أُضيف إلى الطلب", orderHi:"مرحبًا، أودّ أن أطلب:", orderTotal:"الإجمالي", langBtn:"EN", addToCart:"أضف إلى الطلب", related:"منتجات ذات صلة", favorites:"المفضلة", mostViewed:"الأكثر مشاهدة",
       searchPlaceholder:"ابحث عن المنتجات…", searchResults:"نتائج البحث", noResults:"لا توجد منتجات مطابقة لبحثك.",
       items:(n)=>`${n} ${n===1?"منتج":"منتجات"}` },
   };
 
-  /* ---------- Default (demo) catalog — bilingual + ads ---------- */
-  const DEFAULT_DATA = {
-    categories: [
-      { id:"c1", nameEn:"Perfumes & Oils",  nameAr:"العطور والزيوت" },
-      { id:"c2", nameEn:"Spices & Herbs",   nameAr:"البهارات والأعشاب" },
-      { id:"c3", nameEn:"Incense & Resin",  nameAr:"البخور والراتنج" },
-    ],
-    products: [
-      { id:"p1", titleEn:"Damascus Rose Perfume", titleAr:"عطر الورد الدمشقي", descEn:"Hand-distilled rose attar, deep and long-lasting.", descAr:"عطر ورد مقطّر يدويًا، عميق وطويل الأمد.", price:24.00, img:"🌹", categoryId:"c1", viewCount:12, isFavorite:true },
-      { id:"p2", titleEn:"Musk Oil (Roll-on)",    titleAr:"زيت المسك (كرة دوّارة)", descEn:"Warm white musk, alcohol-free. 10ml roll-on.", descAr:"مسك أبيض دافئ، خالٍ من الكحول. كرة دوّارة ١٠ مل.", price:15.00, img:"🧴", categoryId:"c1", viewCount:5, isFavorite:false },
-      { id:"p3", titleEn:"Aleppo Za'atar Blend",  titleAr:"خلطة زعتر حلبي", descEn:"Wild thyme, sumac & toasted sesame. 200g bag.", descAr:"زعتر بري وسمّاق وسمسم محمّص. كيس ٢٠٠غ.", price:8.50, img:"🌿", categoryId:"c2", viewCount:8, isFavorite:true },
-      { id:"p4", titleEn:"Saffron Threads",       titleAr:"خيوط الزعفران", descEn:"Grade A red saffron. Rich aroma & color. 2g tin.", descAr:"زعفران أحمر فاخر. رائحة ولون غنيّ. علبة ٢غ.", price:18.00, img:"🌸", categoryId:"c2", viewCount:20, isFavorite:false },
-      { id:"p5", titleEn:"Frankincense Resin",    titleAr:"راتنج اللبان", descEn:"Premium Boswellia tears for incense burning. 100g.", descAr:"دموع لبان فاخرة لحرق البخور. ١٠٠غ.", price:12.00, img:"🪔", categoryId:"c3", viewCount:3, isFavorite:false },
-    ],
-    ads: [
-      { id:"a1", titleEn:"Hot Deals",    titleAr:"عروض ساخنة", subEn:"Discounts on selected spices",  subAr:"تخفيضات على البهارات المختارة", g1:"#B71C1C", g2:"#EF5350", img:null, linkType:"none", linkCategoryId:null, linkUrl:"", active:true },
-      { id:"a2", titleEn:"New Arrivals", titleAr:"وصل حديثاً", subEn:"Fresh spices & aromatics just in", subAr:"بهارات وعطور جديدة وصلت", g1:"#1B5E20", g2:"#43A047", img:null, linkType:"category", linkCategoryId:"c2", linkUrl:"", active:true },
-      { id:"a3", titleEn:"Best Sellers", titleAr:"الأكثر مبيعاً", subEn:"Our customers' favourites",   subAr:"المنتجات المفضلة لعملائنا", g1:"#0D47A1", g2:"#5C6BC0", img:null, linkType:"none", linkCategoryId:null, linkUrl:"", active:true },
-    ],
-  };
-
   /* ---------- State ---------- */
-  let state = loadData();
+  let state = { categories: [], products: [], ads: [] };
   let lang = "ar";
+  let accessToken = null;
   let searchQuery = "";
   const cart = {};
-  let formUploadedPhoto = null;   // product image
-  let adUploadedPhoto = null;     // ad background image
+  let formUploadedPhoto = null, adUploadedPhoto = null, currentProductId = null;
 
   /* ---------- Utilities ---------- */
   const $ = (id) => document.getElementById(id);
   const money = (n) => CURRENCY + Number(n).toFixed(2);
-  const uid = (p) => p + "_" + Date.now().toString(36) + Math.floor(Math.random()*1e5).toString(36);
   const esc = (s="") => String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const isImgUrl = (v) => /^(https?:|data:)/i.test(v || "");
   const t = (k) => I18N[lang][k];
@@ -418,32 +405,87 @@
   const findAd = (id) => state.ads.find((a)=>a.id===id);
   const catName = (id) => { const c = findCategory(id); return c ? pick(c.nameEn, c.nameAr) : t("other"); };
   const prodName = (p) => pick(p.titleEn, p.titleAr);
+  function toast() {}
 
-  function migrate(d) {
-    if (!Array.isArray(d.ads)) d.ads = JSON.parse(JSON.stringify(DEFAULT_DATA.ads));
-    (d.categories||[]).forEach((c)=>{ if (c.nameEn===undefined){ c.nameEn=c.name||""; c.nameAr=c.nameAr||""; delete c.name; } });
-    (d.products||[]).forEach((p)=>{
-      if (p.titleEn===undefined){ p.titleEn=p.title||""; p.titleAr=p.titleAr||""; delete p.title; }
-      if (p.descEn===undefined){ p.descEn=p.desc||""; p.descAr=p.descAr||""; delete p.desc; }
-      if (p.viewCount===undefined) p.viewCount = 0;
-      if (p.isFavorite===undefined) p.isFavorite = false;
+  /* ================================================================
+     SUPABASE data layer (REST) + snake_case ↔ camelCase mapping
+     ================================================================ */
+  const rowToProduct = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", descEn:r.desc_en||"", descAr:r.desc_ar||"", price:Number(r.price)||0, img:r.img||"🛍️", categoryId:r.category_id||null, viewCount:r.view_count||0, isFavorite:!!r.is_favorite });
+  const productToRow = (p) => ({ title_en:p.titleEn, title_ar:p.titleAr, desc_en:p.descEn, desc_ar:p.descAr, price:p.price, img:p.img, category_id:p.categoryId });
+  const rowToCategory = (r) => ({ id:r.id, nameEn:r.name_en||"", nameAr:r.name_ar||"" });
+  const categoryToRow = (c) => ({ name_en:c.nameEn, name_ar:c.nameAr });
+  const rowToAd = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", subEn:r.sub_en||"", subAr:r.sub_ar||"", g1:r.g1||"#B71C1C", g2:r.g2||"#EF5350", img:r.img||null, linkType:r.link_type||"none", linkCategoryId:r.link_category_id||null, linkProductId:r.link_product_id||null, linkUrl:r.link_url||"", active:r.active!==false });
+  const adToRow = (a) => ({ title_en:a.titleEn, title_ar:a.titleAr, sub_en:a.subEn, sub_ar:a.subAr, g1:a.g1, g2:a.g2, img:a.img, link_type:a.linkType, link_category_id:a.linkCategoryId, link_product_id:a.linkProductId, link_url:a.linkUrl, active:a.active });
+
+  function sbHeaders(auth) {
+    const h = { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" };
+    h.Authorization = "Bearer " + ((auth && accessToken) ? accessToken : SUPABASE_ANON_KEY);
+    return h;
+  }
+  async function sbSelect(table, query) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders(false) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function sbWrite(method, table, id, row) {
+    let url = `${SUPABASE_URL}/rest/v1/${table}`;
+    if (id) url += `?id=eq.${id}`;
+    const opts = { method, headers: { ...sbHeaders(true), Prefer: "return=representation" } };
+    if (row) opts.body = JSON.stringify(row);
+    const r = await fetch(url, opts);
+    if (r.status === 401 || r.status === 403) { signOut(true); throw new Error("الرجاء تسجيل الدخول مجددًا."); }
+    if (!r.ok) throw new Error(await r.text());
+    return method === "DELETE" ? null : r.json();
+  }
+  const sbInsert = (table, row) => sbWrite("POST", table, null, row);
+  const sbUpdate = (table, id, row) => sbWrite("PATCH", table, id, row);
+  const sbDelete = (table, id) => sbWrite("DELETE", table, id, null);
+  async function sbRpc(fn, args) {
+    try { await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method:"POST", headers: sbHeaders(false), body: JSON.stringify(args) }); } catch (e) {}
+  }
+  async function sbUploadImage(blob) {
+    if (!accessToken) throw new Error("سجّل الدخول أولاً");
+    const path = `img_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/product-images/${path}`, {
+      method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + accessToken, "Content-Type": "image/jpeg", "x-upsert": "true" }, body: blob,
     });
-    return d;
+    if (!r.ok) throw new Error(await r.text());
+    return `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
   }
-  function loadData() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.products) && Array.isArray(p.categories)) return migrate(p); }
-    } catch (e) {}
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  async function loadAll() {
+    const [cats, prods, ads] = await Promise.all([
+      sbSelect("categories", "select=*&order=sort_order,created_at"),
+      sbSelect("products", "select=*&order=sort_order,created_at"),
+      sbSelect("ads", "select=*&order=sort_order,created_at"),
+    ]);
+    state.categories = cats.map(rowToCategory);
+    state.products = prods.map(rowToProduct);
+    state.ads = ads.map(rowToAd);
   }
-  function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { toast("⚠️ Could not save (storage full?)"); } }
+  const renderAll = () => { renderPromos(); renderTabBar(); renderMenu(); renderCart(); if (currentProductId) renderProduct(currentProductId); };
+  async function reload() { await loadAll(); renderAll(); if ($("adminScreen").classList.contains("open")) renderAdmin(); }
+
+  /* ---------- Auth ---------- */
+  async function signIn(email, password) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST", headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }),
+    });
+    if (!r.ok) throw new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+    const j = await r.json();
+    accessToken = j.access_token;
+    try { localStorage.setItem(TOKEN_KEY, accessToken); } catch (e) {}
+  }
+  function signOut(silent) {
+    accessToken = null;
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    closeAdmin();
+    if (!silent) openLoginModal();
+  }
 
   function thumbHTML(img, cls) {
     if (isImgUrl(img)) return `<div class="${cls}"><img src="${esc(img)}" alt="" /></div>`;
     return `<div class="${cls}">${esc(img || "🛍️")}</div>`;
   }
-  function toast() { /* bottom toast removed */ }
 
   /* ---------- Theme & Language ---------- */
   function applyTheme(mode) { document.documentElement.dataset.theme=mode; $("themeBtn").textContent = mode==="dark"?"☀️":"🌙"; try{localStorage.setItem(THEME_KEY,mode);}catch(e){} }
@@ -463,13 +505,13 @@
     document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
     document.body.dataset.lang = l;
     applyStaticI18n();
-    renderPromos(); renderTabBar(); renderMenu(); renderCart();
+    renderAll();
     if ($("adminScreen").classList.contains("open")) renderAdmin();
   }
   function toggleLang() { setLang(lang === "ar" ? "en" : "ar"); }
 
   /* ================================================================
-     ADS / PROMO CAROUSEL
+     ADS / PROMO CAROUSEL (seamless loop, swipe/drag to control manually)
      ================================================================ */
   function adCardHTML(a) {
     const title = pick(a.titleEn, a.titleAr), sub = pick(a.subEn, a.subAr);
@@ -538,7 +580,7 @@
   }
 
   /* ================================================================
-     TAB BAR + MENU
+     TAB BAR + MENU + SEARCH
      ================================================================ */
   const SCROLL_OFFSET = 108;
   const sectionId = (catId) => "cat-" + (catId || "other");
@@ -632,7 +674,7 @@
   /* ================================================================
      CART
      ================================================================ */
-  function addToCart(id) { cart[id]=(cart[id]||0)+1; renderCart(); toast(t("added")); }
+  function addToCart(id) { cart[id]=(cart[id]||0)+1; renderCart(); }
   function changeQty(id, d) { if (!cart[id]) return; cart[id]+=d; if (cart[id]<=0) delete cart[id]; renderCart(); }
   function removeItem(id) { delete cart[id]; renderCart(); }
   const cartCount = () => Object.values(cart).reduce((s,q)=>s+q,0);
@@ -679,9 +721,8 @@
   }
 
   /* ================================================================
-     PRODUCT DETAIL PAGE (each product has its own URL: #product/<id>)
+     PRODUCT DETAIL PAGE (#product/<id>) + related/favorites/most-viewed
      ================================================================ */
-  let currentProductId = null;
   function openProduct(id) { if (!findProduct(id)) return; location.hash = "product/" + id; }
   function closeProduct() { if (location.hash) { if (history.length > 1) history.back(); else location.hash = ""; } }
   function handleHash() {
@@ -689,16 +730,12 @@
     if (m && findProduct(decodeURIComponent(m[1]))) {
       currentProductId = decodeURIComponent(m[1]);
       const pp = findProduct(currentProductId);
-      pp.viewCount = (pp.viewCount || 0) + 1; saveData();   // real view tracking → "Most viewed"
+      pp.viewCount = (pp.viewCount || 0) + 1; sbRpc("increment_view", { pid: currentProductId });
       renderProduct(currentProductId);
-      $("productScreen").classList.add("open");
-      $("productScreen").scrollTop = 0;
-    } else {
-      currentProductId = null;
-      $("productScreen").classList.remove("open");
-    }
+      $("productScreen").classList.add("open"); $("productScreen").scrollTop = 0;
+    } else { currentProductId = null; $("productScreen").classList.remove("open"); }
   }
-  function miniThumb(img) { return isImgUrl(img) ? `<div class="mini-thumb"><img src="${esc(img)}" alt="" /></div>` : `<div class="mini-thumb">${esc(img || "🛍️")}</div>`; }
+  function miniThumb(img) { return isImgUrl(img) ? `<div class="mini-thumb"><img src="${esc(img)}" alt="" /></div>` : `<div class="mini-thumb">${esc(img||"🛍️")}</div>`; }
   function productRowHTML(key, items) {
     if (!items.length) return "";
     return `
@@ -724,7 +761,6 @@
     const cat = findCategory(p.categoryId);
     const heroImg = isImgUrl(p.img) ? `<img src="${esc(p.img)}" alt="" />` : `<span>${esc(p.img || "🛍️")}</span>`;
     const desc = pick(p.descEn, p.descAr);
-    // related / favorites / most-viewed (all exclude the current product)
     const related = state.products.filter((x)=>x.id!==id && x.categoryId===p.categoryId).slice(0, 10);
     const favs = state.products.filter((x)=>x.id!==id && x.isFavorite).slice(0, 10);
     const viewed = state.products.filter((x)=>x.id!==id && (x.viewCount||0)>0).sort((a,b)=>(b.viewCount||0)-(a.viewCount||0)).slice(0, 10);
@@ -786,12 +822,10 @@
     }).join("");
   }
 
-  /* ================================================================
-     ADMIN — product form
-     ================================================================ */
+  /* ---------- product form ---------- */
   function openProductForm(id) {
     const editing = id ? findProduct(id) : null;
-    const hasPhoto = !!(editing && (editing.img||"").startsWith("data:"));
+    const hasPhoto = !!(editing && (editing.img||"").startsWith("http"));
     formUploadedPhoto = hasPhoto ? editing.img : null;
     const textImg = editing && !hasPhoto ? esc(editing.img) : "";
     const opts = state.categories.map((c)=>`<option value="${esc(c.id)}" ${editing && editing.categoryId===c.id?"selected":""}>${esc(pick(c.nameEn,c.nameAr))}</option>`).join("");
@@ -820,10 +854,10 @@
             <input type="file" id="f_img_file" accept="image/*" hidden />
           </div>
         </div>
-        <div class="hint">رمز تعبيري أو رابط صورة أو صورة مرفوعة (يُعاد ضبط حجمها تلقائيًا).</div>
+        <div class="hint">رمز تعبيري، رابط صورة، أو صورة مرفوعة (تُخزَّن في مساحة Supabase الخاصة بك).</div>
       </div>
       <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-product="${editing?esc(editing.id):""}">حفظ</button></div>`;
-    setupImageEditor();
+    setupImageEditor("f", () => formUploadedPhoto, (v)=>formUploadedPhoto=v);
     openFormModal(); setTimeout(()=>$("f_titleEn").focus(),50);
   }
   function effectiveFormImg() { if (formUploadedPhoto) return formUploadedPhoto; return $("f_img").value.trim() || "🛍️"; }
@@ -833,18 +867,21 @@
     $("f_remove_photo").style.display = formUploadedPhoto ? "" : "none";
     $("f_upload_btn").textContent = formUploadedPhoto ? "📷 استبدال الصورة" : "📷 رفع صورة";
   }
-  function setupImageEditor() {
-    updateFormImgPreview();
-    $("f_img").addEventListener("input", ()=>{ if (!formUploadedPhoto) updateFormImgPreview(); });
-    $("f_upload_btn").addEventListener("click", ()=>$("f_img_file").click());
-    $("f_remove_photo").addEventListener("click", ()=>{ formUploadedPhoto=null; updateFormImgPreview(); });
-    $("f_img_file").addEventListener("change", async (e)=>{
+  function setupImageEditor(prefix, getPhoto, setPhoto) {
+    const preview = () => prefix==="f" ? updateFormImgPreview() : updateAdImgPreview();
+    preview();
+    if (prefix==="f") $("f_img").addEventListener("input", ()=>{ if (!getPhoto()) preview(); });
+    $(prefix+"_upload_btn").addEventListener("click", ()=>$(prefix+"_img_file").click());
+    $(prefix+"_remove_photo").addEventListener("click", ()=>{ setPhoto(null); preview(); });
+    $(prefix+"_img_file").addEventListener("change", async (e)=>{
       const file=e.target.files[0]; e.target.value="";
       if (!file) return;
-      if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
-      if (file.size > 15*1024*1024) { toast("Image too large (max 15MB)"); return; }
-      try { formUploadedPhoto = await compressImage(file, 720, 0.72); updateFormImgPreview(); toast("Photo added"); }
-      catch (err) { toast("⚠️ Could not read that image"); }
+      if (!file.type.startsWith("image/")) { alert("الرجاء اختيار ملف صورة"); return; }
+      if (file.size > 15*1024*1024) { alert("الصورة كبيرة جدًا (الحد الأقصى 15 ميغابايت)"); return; }
+      const btn = $(prefix+"_upload_btn"); const label = btn.textContent; btn.textContent = "⏳ جارٍ الرفع…"; btn.disabled = true;
+      try { const blob = await compressImage(file, 900, 0.72); const url = await sbUploadImage(blob); setPhoto(url); }
+      catch (err) { alert("فشل الرفع: " + err.message); }
+      finally { btn.disabled = false; btn.textContent = label; preview(); }
     });
   }
   function compressImage(file, maxDim, quality) {
@@ -856,39 +893,33 @@
           else if (height>width && height>maxDim){ width=Math.round(width*maxDim/height); height=maxDim; }
           const canvas=document.createElement("canvas"); canvas.width=width; canvas.height=height;
           canvas.getContext("2d").drawImage(img,0,0,width,height);
-          resolve(canvas.toDataURL("image/jpeg", quality)); };
-        img.src=reader.result; };
+          canvas.toBlob((b)=> b ? resolve(b) : reject(new Error("blob failed")), "image/jpeg", quality);
+        }; img.src=reader.result; };
       reader.readAsDataURL(file);
     });
   }
-  function saveProduct(id) {
+  async function saveProduct(id) {
     const titleEn=$("f_titleEn").value.trim(), titleAr=$("f_titleAr").value.trim();
     const price=parseFloat($("f_price").value);
-    if (!titleEn && !titleAr) { toast("Add a title (EN or عربي)"); return; }
-    if (isNaN(price) || price<0) { toast("Enter a valid price"); return; }
-    const data={ titleEn, titleAr, descEn:$("f_descEn").value.trim(), descAr:$("f_descAr").value.trim(), price:Math.round(price*100)/100, categoryId:$("f_cat").value||null, img:effectiveFormImg() };
-    if (id) Object.assign(findProduct(id), data); else state.products.push({ id:uid("p"), viewCount:0, isFavorite:false, ...data });
-    saveData(); closeFormModal(); renderAdmin(); renderTabBar(); renderMenu(); renderCart();
-    toast(id?"Product updated":"Product added");
+    if (!titleEn && !titleAr) { alert("أضف عنوانًا (إنجليزي أو عربي)"); return; }
+    if (isNaN(price) || price<0) { alert("أدخل سعرًا صحيحًا"); return; }
+    const row = productToRow({ titleEn, titleAr, descEn:$("f_descEn").value.trim(), descAr:$("f_descAr").value.trim(), price:Math.round(price*100)/100, categoryId:$("f_cat").value||null, img:effectiveFormImg() });
+    try { if (id) await sbUpdate("products", id, row); else await sbInsert("products", row); closeFormModal(); await reload(); }
+    catch (e) { alert("فشل الحفظ: " + e.message); }
   }
-  function toggleFavorite(id) {
+  async function toggleFavorite(id) {
     const p=findProduct(id); if (!p) return;
-    p.isFavorite=!p.isFavorite; saveData(); renderAdminProducts();
-    if (currentProductId) renderProduct(currentProductId);
-    toast(p.isFavorite?"Marked favorite ★":"Removed favorite");
+    try { await sbUpdate("products", id, { is_favorite: !p.isFavorite }); await reload(); }
+    catch (e) { alert("فشل التحديث: " + e.message); }
   }
-  function deleteProduct(id) {
+  async function deleteProduct(id) {
     const p=findProduct(id); if (!p) return;
     if (!confirm(`حذف "${prodName(p)}"؟ لا يمكن التراجع عن هذا.`)) return;
-    state.products=state.products.filter((x)=>x.id!==id); delete cart[id];
-    state.ads.forEach((a)=>{ if (a.linkProductId===id){ a.linkProductId=null; a.linkType="none"; } });
-    if (currentProductId===id) closeProduct();
-    saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Product deleted");
+    try { await sbDelete("products", id); delete cart[id]; if (currentProductId===id) closeProduct(); await reload(); }
+    catch (e) { alert("فشل الحذف: " + e.message); }
   }
 
-  /* ================================================================
-     ADMIN — category form
-     ================================================================ */
+  /* ---------- category form ---------- */
   function openCategoryForm(id) {
     const editing = id ? findCategory(id) : null;
     $("formCard").innerHTML = `
@@ -900,26 +931,23 @@
       <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-category="${editing?esc(editing.id):""}">حفظ</button></div>`;
     openFormModal(); setTimeout(()=>$("f_cnameEn").focus(),50);
   }
-  function saveCategory(id) {
+  async function saveCategory(id) {
     const nameEn=$("f_cnameEn").value.trim(), nameAr=$("f_cnameAr").value.trim();
-    if (!nameEn && !nameAr) { toast("Add a name (EN or عربي)"); return; }
-    if (id) { const c=findCategory(id); c.nameEn=nameEn; c.nameAr=nameAr; } else state.categories.push({ id:uid("c"), nameEn, nameAr });
-    saveData(); closeFormModal(); renderAdmin(); renderTabBar(); renderMenu(); toast(id?"Category updated":"Category added");
+    if (!nameEn && !nameAr) { alert("أضف اسمًا (إنجليزي أو عربي)"); return; }
+    const row = categoryToRow({ nameEn, nameAr });
+    try { if (id) await sbUpdate("categories", id, row); else await sbInsert("categories", row); closeFormModal(); await reload(); }
+    catch (e) { alert("فشل الحفظ: " + e.message); }
   }
-  function deleteCategory(id) {
+  async function deleteCategory(id) {
     const c=findCategory(id); if (!c) return;
     const n=state.products.filter((p)=>p.categoryId===id).length;
     const msg = n>0 ? `حذف "${pick(c.nameEn,c.nameAr)}"؟ سيتم نقل ${n} ${n===1?"منتج":"منتجات"} إلى "أخرى".` : `حذف "${pick(c.nameEn,c.nameAr)}"؟`;
     if (!confirm(msg)) return;
-    state.categories=state.categories.filter((x)=>x.id!==id);
-    state.products.forEach((p)=>{ if (p.categoryId===id) p.categoryId=null; });
-    state.ads.forEach((a)=>{ if (a.linkCategoryId===id){ a.linkCategoryId=null; a.linkType="none"; } });
-    saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); toast("Category deleted");
+    try { await sbDelete("categories", id); await reload(); }
+    catch (e) { alert("فشل الحذف: " + e.message); }
   }
 
-  /* ================================================================
-     ADMIN — ad form
-     ================================================================ */
+  /* ---------- ad form ---------- */
   function openAdForm(id) {
     const editing = id ? findAd(id) : null;
     adUploadedPhoto = editing && editing.img ? editing.img : null;
@@ -968,7 +996,7 @@
       <div class="field" id="fa_url_field" style="display:${lt==="url"?"":"none"}"><label>الرابط</label><input id="fa_linkUrl" value="${editing?esc(editing.linkUrl||""):""}" placeholder="https://…" /></div>
       <div class="check-field"><input type="checkbox" id="fa_active" ${!editing || editing.active!==false?"checked":""} /><label for="fa_active">إظهار هذا الإعلان في السلايدر</label></div>
       <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-ad="${editing?esc(editing.id):""}">حفظ</button></div>`;
-    setupAdImageEditor();
+    setupImageEditor("fa", () => adUploadedPhoto, (v)=>adUploadedPhoto=v);
     $("fa_linkType").addEventListener("change", (e)=>{
       const v=e.target.value;
       $("fa_cat_field").style.display = v==="category"?"":"none";
@@ -979,68 +1007,42 @@
   }
   function updateAdImgPreview() {
     const box=$("fa_img_preview");
-    if (adUploadedPhoto) box.style.backgroundImage = `url('${adUploadedPhoto}')`;
-    else { box.style.backgroundImage=""; box.innerHTML="🖼️"; }
+    box.style.backgroundImage = adUploadedPhoto ? `url('${adUploadedPhoto}')` : "";
     box.innerHTML = adUploadedPhoto ? "" : "🖼️";
     $("fa_remove_photo").style.display = adUploadedPhoto ? "" : "none";
     $("fa_upload_btn").textContent = adUploadedPhoto ? "📷 استبدال الصورة" : "📷 رفع صورة";
   }
-  function setupAdImageEditor() {
-    updateAdImgPreview();
-    $("fa_upload_btn").addEventListener("click", ()=>$("fa_img_file").click());
-    $("fa_remove_photo").addEventListener("click", ()=>{ adUploadedPhoto=null; updateAdImgPreview(); });
-    $("fa_img_file").addEventListener("change", async (e)=>{
-      const file=e.target.files[0]; e.target.value="";
-      if (!file) return;
-      if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
-      if (file.size > 15*1024*1024) { toast("Image too large (max 15MB)"); return; }
-      try { adUploadedPhoto = await compressImage(file, 1000, 0.72); updateAdImgPreview(); toast("Photo added"); }
-      catch (err) { toast("⚠️ Could not read that image"); }
-    });
-  }
-  function saveAd(id) {
+  async function saveAd(id) {
     const titleEn=$("fa_titleEn").value.trim(), titleAr=$("fa_titleAr").value.trim();
-    if (!titleEn && !titleAr) { toast("Add a title (EN or عربي)"); return; }
+    if (!titleEn && !titleAr) { alert("أضف عنوانًا (إنجليزي أو عربي)"); return; }
     const linkType=$("fa_linkType").value;
-    const data={ titleEn, titleAr, subEn:$("fa_subEn").value.trim(), subAr:$("fa_subAr").value.trim(),
-      g1:$("fa_g1").value, g2:$("fa_g2").value, img:adUploadedPhoto||null, linkType,
+    const row = adToRow({ titleEn, titleAr, subEn:$("fa_subEn").value.trim(), subAr:$("fa_subAr").value.trim(), g1:$("fa_g1").value, g2:$("fa_g2").value, img:adUploadedPhoto||null, linkType,
       linkCategoryId: linkType==="category" ? ($("fa_linkCat").value||null) : null,
       linkProductId: linkType==="product" ? ($("fa_linkProd").value||null) : null,
-      linkUrl: linkType==="url" ? $("fa_linkUrl").value.trim() : "", active:$("fa_active").checked };
-    if (id) Object.assign(findAd(id), data); else state.ads.push({ id:uid("a"), ...data });
-    saveData(); closeFormModal(); renderAdminAds(); renderPromos(); toast(id?"Ad updated":"Ad added");
+      linkUrl: linkType==="url" ? $("fa_linkUrl").value.trim() : "", active:$("fa_active").checked });
+    try { if (id) await sbUpdate("ads", id, row); else await sbInsert("ads", row); closeFormModal(); await reload(); }
+    catch (e) { alert("فشل الحفظ: " + e.message); }
   }
-  function deleteAd(id) {
+  async function deleteAd(id) {
     const a=findAd(id); if (!a) return;
     if (!confirm(`حذف هذا الإعلان "${pick(a.titleEn,a.titleAr)||"(بدون عنوان)"}"؟`)) return;
-    state.ads=state.ads.filter((x)=>x.id!==id);
-    saveData(); renderAdminAds(); renderPromos(); toast("Ad deleted");
+    try { await sbDelete("ads", id); await reload(); }
+    catch (e) { alert("فشل الحذف: " + e.message); }
   }
 
-  /* ================================================================
-     ADMIN — data tools
-     ================================================================ */
-  function exportData() {
-    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-    const url=URL.createObjectURL(blob), a=document.createElement("a");
-    a.href=url; a.download="sham-store-catalog.json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast("Exported catalog");
-  }
-  function importData(file) {
-    const reader=new FileReader();
-    reader.onload=()=>{ try {
-      const parsed=JSON.parse(reader.result);
-      if (!parsed || !Array.isArray(parsed.products) || !Array.isArray(parsed.categories)) throw new Error("bad shape");
-      state=migrate(parsed); saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Catalog imported");
-    } catch (e) { toast("⚠️ Invalid catalog file"); } };
-    reader.readAsText(file);
-  }
-  function resetData() {
-    if (!confirm("إعادة ضبط القائمة بالكامل إلى النسخة التجريبية الافتراضية؟ ستفقد تغييراتك.")) return;
-    state=JSON.parse(JSON.stringify(DEFAULT_DATA)); saveData(); renderAdmin(); renderTabBar(); renderMenu(); renderPromos(); renderCart(); toast("Reset to demo");
-  }
   const openFormModal = () => $("formModal").classList.add("open");
   const closeFormModal = () => $("formModal").classList.remove("open");
+
+  /* ================================================================
+     BOOT / loading / setup screens
+     ================================================================ */
+  function showBoot(kind, detail) {
+    const c = $("bootCard"); $("boot").classList.add("open");
+    if (kind === "loading") c.innerHTML = `<div class="spinner"></div><p>جارٍ تحميل القائمة…</p>`;
+    else if (kind === "setup") c.innerHTML = `<div class="b-logo">🌿</div><h2>القائمة غير متصلة بعد</h2><p>افتح <code>index.html</code> والصق قيم <code>SUPABASE_URL</code> و<code>SUPABASE_ANON_KEY</code> أعلى الكود.</p>`;
+    else c.innerHTML = `<div class="b-logo">⚠️</div><h2>تعذّر تحميل القائمة</h2><p>${esc(detail||"")}</p><button class="btn btn-primary" onclick="location.reload()">إعادة المحاولة</button>`;
+  }
+  const hideBoot = () => $("boot").classList.remove("open");
 
   /* ================================================================
      EVENT WIRING
@@ -1082,6 +1084,7 @@
 
   document.querySelector(".admin-tabs").addEventListener("click", (e)=>{ const btn=e.target.closest("[data-tab]"); if (!btn) return; document.querySelectorAll(".admin-tabs button").forEach((b)=>b.classList.remove("active")); document.querySelectorAll(".admin-pane").forEach((p)=>p.classList.remove("active")); btn.classList.add("active"); $("pane-"+btn.dataset.tab).classList.add("active"); });
   $("adminClose").addEventListener("click", closeAdmin);
+  $("adminLogout").addEventListener("click", ()=>signOut(false));
   $("addProductBtn").addEventListener("click", ()=>openProductForm(null));
   $("addCategoryBtn").addEventListener("click", ()=>openCategoryForm(null));
   $("addAdBtn").addEventListener("click", ()=>openAdForm(null));
@@ -1090,30 +1093,41 @@
   $("adminAdList").addEventListener("click", (e)=>{ const ed=e.target.closest("[data-edit-ad]"), dl=e.target.closest("[data-del-ad]"); if (ed) openAdForm(ed.dataset.editAd); if (dl) deleteAd(dl.dataset.delAd); });
   $("formCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-form-cancel]")) { closeFormModal(); return; } const sp=e.target.closest("[data-save-product]"), sc=e.target.closest("[data-save-category]"), sa=e.target.closest("[data-save-ad]"); if (sp) saveProduct(sp.dataset.saveProduct||null); if (sc) saveCategory(sc.dataset.saveCategory||null); if (sa) saveAd(sa.dataset.saveAd||null); });
   $("formModal").addEventListener("click", (e)=>{ if (e.target===$("formModal")) closeFormModal(); });
-  $("exportBtn").addEventListener("click", exportData);
-  $("importBtn").addEventListener("click", ()=>$("importFile").click());
-  $("importFile").addEventListener("change", (e)=>{ if (e.target.files[0]) importData(e.target.files[0]); e.target.value=""; });
-  $("resetBtn").addEventListener("click", resetData);
 
+  // admin access: long-press logo → login (or straight to admin if already signed in)
   let pressTimer;
-  const brand=$("brand");
-  brand.addEventListener("pointerdown", ()=>{ pressTimer=setTimeout(openPinModal,1000); });
+  const brand = $("brand");
+  brand.addEventListener("pointerdown", ()=>{ pressTimer = setTimeout(()=>{ if (accessToken) openAdmin(); else openLoginModal(); }, 1000); });
   brand.addEventListener("pointerup", ()=>clearTimeout(pressTimer));
   brand.addEventListener("pointerleave", ()=>clearTimeout(pressTimer));
-  function openPinModal() { $("pinInput").value=""; $("pinError").textContent=""; $("pinModal").classList.add("open"); setTimeout(()=>$("pinInput").focus(),50); }
-  const closePinModal = () => $("pinModal").classList.remove("open");
-  function submitPin() { if ($("pinInput").value===ADMIN_PIN) { closePinModal(); openAdmin(); } else { $("pinError").textContent="رمز غير صحيح"; $("pinInput").value=""; } }
-  $("pinSubmit").addEventListener("click", submitPin);
-  $("pinCancel").addEventListener("click", closePinModal);
-  $("pinInput").addEventListener("keydown", (e)=>{ if (e.key==="Enter") submitPin(); });
-  document.addEventListener("keydown", (e)=>{ if (e.key!=="Escape") return; if ($("pinModal").classList.contains("open")) return closePinModal(); if ($("formModal").classList.contains("open")) return closeFormModal(); if ($("adminScreen").classList.contains("open")) return closeAdmin(); if ($("cartPanel").classList.contains("open")) return closeCart(); });
+  function openLoginModal() { $("loginEmail").value=""; $("loginPassword").value=""; $("loginError").textContent=""; $("loginModal").classList.add("open"); setTimeout(()=>$("loginEmail").focus(), 50); }
+  const closeLoginModal = () => $("loginModal").classList.remove("open");
+  async function submitLogin() {
+    const email=$("loginEmail").value.trim(), password=$("loginPassword").value;
+    if (!email || !password) { $("loginError").textContent = "أدخل البريد الإلكتروني وكلمة المرور"; return; }
+    $("loginSubmit").disabled = true; $("loginError").textContent = "";
+    try { await signIn(email, password); closeLoginModal(); openAdmin(); }
+    catch (e) { $("loginError").textContent = e.message; }
+    finally { $("loginSubmit").disabled = false; }
+  }
+  $("loginSubmit").addEventListener("click", submitLogin);
+  $("loginCancel").addEventListener("click", closeLoginModal);
+  $("loginPassword").addEventListener("keydown", (e)=>{ if (e.key==="Enter") submitLogin(); });
+  document.addEventListener("keydown", (e)=>{ if (e.key!=="Escape") return; if ($("loginModal").classList.contains("open")) return closeLoginModal(); if ($("formModal").classList.contains("open")) return closeFormModal(); if ($("adminScreen").classList.contains("open")) return closeAdmin(); if ($("cartPanel").classList.contains("open")) return closeCart(); });
 
   /* ---------- Init ---------- */
-  applyTheme((()=>{ try { return localStorage.getItem(THEME_KEY)||"light"; } catch (e) { return "light"; } })());
-  initPromoAutoSlide();
-  setLang((()=>{ try { return localStorage.getItem(LANG_KEY)||"ar"; } catch (e) { return "ar"; } })());
-  handleHash();
-  updateSearchExpand();
+  async function boot() {
+    applyTheme((()=>{ try { return localStorage.getItem(THEME_KEY)||"light"; } catch (e) { return "light"; } })());
+    try { accessToken = localStorage.getItem(TOKEN_KEY) || null; } catch (e) {}
+    initPromoAutoSlide();
+    setLang((()=>{ try { return localStorage.getItem(LANG_KEY)||"ar"; } catch (e) { return "ar"; } })());
+    updateSearchExpand();
+    if (!isConfigured()) { showBoot("setup"); return; }
+    showBoot("loading");
+    try { await loadAll(); hideBoot(); renderAll(); handleHash(); }
+    catch (e) { showBoot("error", (e && e.message) || "خطأ في الشبكة"); }
+  }
+  boot();
   </script>
 </body>
 </html>
