@@ -69,6 +69,7 @@
 
     /* ============ ADS / PROMO CAROUSEL ============ */
     .promo-track { direction:ltr; display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 16px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .promo-track.dragging { scroll-snap-type:none; scroll-behavior:auto; }
     .promo-track::-webkit-scrollbar { display:none; }
     .promo-card { scroll-snap-align:center; flex:0 0 78%; max-width:520px; height:200px; border-radius:18px; position:relative; overflow:hidden; cursor:pointer; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.18); background-size:cover; background-position:center; }
     @media (min-width:620px){ .promo-card { flex-basis:60%; } }
@@ -108,6 +109,7 @@
     .price { font-weight:800; color:var(--primary); font-size:1rem; }
     .price-old { text-decoration:line-through; opacity:.6; font-weight:600; font-size:.85em; margin-inline-end:6px; }
     .price-sale { color:var(--sale); }
+    .unit-label { font-size:.75em; font-weight:600; color:var(--muted); }
     .add-btn { background:var(--primary); color:#fff; border:none; width:34px; height:34px; border-radius:10px; font-weight:700; font-size:1.2rem; line-height:1; cursor:pointer; flex:none; transition:background .2s ease, transform .1s ease; }
     .add-btn:hover { background:var(--secondary); } .add-btn:active { transform:scale(.9); }
     .empty-menu { text-align:center; color:var(--muted); margin-top:60px; }
@@ -189,10 +191,25 @@
     .admin-top { background:var(--app-grad); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .admin-top h2 { margin:0; font-size:1.15rem; }
     .admin-top .at-actions { display:flex; gap:8px; flex:none; }
-    .admin-tabs { display:flex; gap:4px; background:var(--surface); border-bottom:1px solid var(--line); padding:0 12px; }
-    .admin-tabs button { background:none; border:none; padding:14px 16px; font-size:.95rem; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; }
-    .admin-tabs button.active { color:var(--primary); border-bottom-color:var(--primary); }
-    .admin-body { flex:1; overflow-y:auto; padding:18px; max-width:760px; margin:0 auto; width:100%; }
+    .admin-shell { display:flex; flex-direction:column; flex:1; min-height:0; }
+    .admin-sidebar { display:flex; gap:4px; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--line); padding:8px 12px; flex:none; scrollbar-width:none; }
+    .admin-sidebar::-webkit-scrollbar { display:none; }
+    .admin-sidebar button { background:none; border:none; padding:10px 14px; border-radius:10px; font-size:.85rem; font-weight:700; color:var(--muted); cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; flex:none; }
+    .admin-sidebar button:hover { background:color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+    .admin-sidebar button.active { color:#fff; background:var(--primary); }
+    .admin-main { flex:1; overflow-y:auto; min-height:0; }
+    .admin-body { padding:18px; max-width:900px; margin:0 auto; width:100%; }
+    .stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:8px; }
+    @media (min-width:560px){ .stat-grid { grid-template-columns:repeat(4,1fr); } }
+    .stat-card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:6px; }
+    .stat-card .stat-icon { font-size:1.4rem; }
+    .stat-card .stat-num { font-size:1.6rem; font-weight:800; color:var(--primary); }
+    .stat-card .stat-label { color:var(--muted); font-size:.82rem; font-weight:600; }
+    @media (min-width:760px) {
+      .admin-shell { flex-direction:row; }
+      .admin-sidebar { flex-direction:column; align-items:stretch; width:220px; flex:none; border-bottom:none; border-inline-end:1px solid var(--line); padding:16px 12px; overflow-x:visible; overflow-y:auto; }
+      .admin-sidebar button { justify-content:flex-start; }
+    }
     .admin-pane { display:none; } .admin-pane.active { display:block; }
     .admin-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
     .admin-bar h3 { margin:0; font-size:1.05rem; }
@@ -315,31 +332,40 @@
       <h2>⚙️ الإدارة — إدارة القائمة</h2>
       <div class="at-actions"><button class="btn btn-ghost btn-sm" id="adminLogout">تسجيل الخروج</button><button class="btn btn-ghost btn-sm" id="adminClose">تم</button></div>
     </div>
-    <div class="admin-tabs">
-      <button data-tab="products" class="active">المنتجات</button>
-      <button data-tab="categories">الفئات</button>
-      <button data-tab="ads">الإعلانات</button>
-    </div>
-    <div class="admin-body">
-      <div class="warn-note">ℹ️ التغييرات هنا تُنشر مباشرةً لجميع الزوار عبر قاعدة البيانات السحابية.</div>
-      <div class="admin-bar" style="margin-bottom:18px;">
-        <h3 style="font-size:.9rem;color:var(--muted)">إعدادات العرض</h3>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;">
-          <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowPrices" /> إظهار الأسعار</label>
-          <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowBasket" /> إظهار السلة</label>
+    <div class="admin-shell">
+      <nav class="admin-sidebar">
+        <button data-tab="dashboard" class="active">📊 لوحة التحكم</button>
+        <button data-tab="products">🛍️ المنتجات</button>
+        <button data-tab="categories">🏷️ الفئات</button>
+        <button data-tab="ads">📣 الإعلانات</button>
+        <button data-tab="settings">⚙️ الإعدادات</button>
+      </nav>
+      <div class="admin-main">
+        <div class="admin-body">
+          <div class="warn-note">ℹ️ التغييرات هنا تُنشر مباشرةً لجميع الزوار عبر قاعدة البيانات السحابية.</div>
+          <div class="admin-pane active" id="pane-dashboard">
+            <div class="stat-grid" id="statGrid"></div>
+          </div>
+          <div class="admin-pane" id="pane-products">
+            <div class="admin-bar"><h3>المنتجات</h3><button class="btn btn-primary btn-sm" id="addProductBtn">+ إضافة منتج</button></div>
+            <div id="adminProductList"></div>
+          </div>
+          <div class="admin-pane" id="pane-categories">
+            <div class="admin-bar"><h3>الفئات</h3><button class="btn btn-primary btn-sm" id="addCategoryBtn">+ إضافة فئة</button></div>
+            <div id="adminCategoryList"></div>
+          </div>
+          <div class="admin-pane" id="pane-ads">
+            <div class="admin-bar"><h3>لافتات الإعلانات</h3><button class="btn btn-primary btn-sm" id="addAdBtn">+ إضافة إعلان</button></div>
+            <div id="adminAdList"></div>
+          </div>
+          <div class="admin-pane" id="pane-settings">
+            <div class="admin-bar"><h3>إعدادات العرض</h3></div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+              <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowPrices" /> إظهار الأسعار</label>
+              <label class="check-field" style="margin-bottom:0;"><input type="checkbox" id="setShowBasket" /> إظهار السلة</label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="admin-pane active" id="pane-products">
-        <div class="admin-bar"><h3>المنتجات</h3><button class="btn btn-primary btn-sm" id="addProductBtn">+ إضافة منتج</button></div>
-        <div id="adminProductList"></div>
-      </div>
-      <div class="admin-pane" id="pane-categories">
-        <div class="admin-bar"><h3>الفئات</h3><button class="btn btn-primary btn-sm" id="addCategoryBtn">+ إضافة فئة</button></div>
-        <div id="adminCategoryList"></div>
-      </div>
-      <div class="admin-pane" id="pane-ads">
-        <div class="admin-bar"><h3>لافتات الإعلانات</h3><button class="btn btn-primary btn-sm" id="addAdBtn">+ إضافة إعلان</button></div>
-        <div id="adminAdList"></div>
       </div>
     </div>
   </div>
@@ -377,6 +403,7 @@
   const THEME_KEY = "shamstore_theme", LANG_KEY = "shamstore_lang", TOKEN_KEY = "shamstore_admin_token";
 
   const isConfigured = () => /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
+  const UNIT_OPTIONS = ["كيلو", "نصف كيلو", "ربع كيلو", "جرام", "علبة", "حبة", "عبوة", "لتر", "مل"];
 
   /* ---------- UI strings ---------- */
   const I18N = {
@@ -411,14 +438,18 @@
     const sp = Number(p.salePrice);
     return (p.salePrice != null && !isNaN(sp) && sp > 0 && sp < Number(p.price)) ? sp : Number(p.price);
   }
+  function unitSuffix(p) {
+    return p.unit ? ` <span class="unit-label">/ ${esc(p.unit)}</span>` : "";
+  }
   function priceHTML(p, opts) {
     const force = opts && opts.force;
     if (!force && !pricesVisible()) return "";
     const sp = Number(p.salePrice);
     const hasSale = p.salePrice != null && !isNaN(sp) && sp > 0 && sp < Number(p.price);
-    return hasSale
+    const priceMarkup = hasSale
       ? `<span class="price-old">${money(p.price)}</span> <span class="price-sale">${money(sp)}</span>`
       : money(p.price);
+    return priceMarkup + unitSuffix(p);
   }
   const esc = (s="") => String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const isImgUrl = (v) => /^(https?:|data:)/i.test(v || "");
@@ -434,8 +465,8 @@
   /* ================================================================
      SUPABASE data layer (REST) + snake_case ↔ camelCase mapping
      ================================================================ */
-  const rowToProduct = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", descEn:r.desc_en||"", descAr:r.desc_ar||"", price:Number(r.price)||0, salePrice:(r.sale_price!=null?Number(r.sale_price):null), img:r.img||"🛍️", categoryId:r.category_id||null, viewCount:r.view_count||0, isFavorite:!!r.is_favorite });
-  const productToRow = (p) => ({ title_en:p.titleEn, title_ar:p.titleAr, desc_en:p.descEn, desc_ar:p.descAr, price:p.price, sale_price:(p.salePrice!=null?p.salePrice:null), img:p.img, category_id:p.categoryId });
+  const rowToProduct = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", descEn:r.desc_en||"", descAr:r.desc_ar||"", price:Number(r.price)||0, salePrice:(r.sale_price!=null?Number(r.sale_price):null), unit:r.unit||"", img:r.img||"🛍️", categoryId:r.category_id||null, viewCount:r.view_count||0, isFavorite:!!r.is_favorite });
+  const productToRow = (p) => ({ title_en:p.titleEn, title_ar:p.titleAr, desc_en:p.descEn, desc_ar:p.descAr, price:p.price, sale_price:(p.salePrice!=null?p.salePrice:null), unit:(p.unit||null), img:p.img, category_id:p.categoryId });
   const rowToCategory = (r) => ({ id:r.id, nameEn:r.name_en||"", nameAr:r.name_ar||"" });
   const categoryToRow = (c) => ({ name_en:c.nameEn, name_ar:c.nameAr });
   const rowToSettings = (r) => ({ showPrices:r.show_prices!==false, showBasket:r.show_basket!==false });
@@ -613,10 +644,17 @@
     let dragging = false, startX = 0, startScroll = 0;
     track.addEventListener("pointerdown", (e) => {
       pausePromo(4000); promoDragMoved = 0;
-      if (e.pointerType === "mouse") { dragging = true; startX = e.clientX; startScroll = track.scrollLeft; }
+      if (e.pointerType === "mouse") {
+        dragging = true; startX = e.clientX; startScroll = track.scrollLeft;
+        track.classList.add("dragging"); // disables scroll-snap while dragging so scrollLeft actually moves
+        e.preventDefault();
+      }
     });
     window.addEventListener("pointermove", (e) => { if (!dragging) return; const dx = e.clientX - startX; promoDragMoved = Math.abs(dx); track.scrollLeft = startScroll - dx; });
-    window.addEventListener("pointerup", () => { dragging = false; clearTimeout(promoResume); promoResume = setTimeout(() => promoPaused = false, 1500); });
+    window.addEventListener("pointerup", () => {
+      if (dragging) track.classList.remove("dragging");
+      dragging = false; clearTimeout(promoResume); promoResume = setTimeout(() => promoPaused = false, 1500);
+    });
     // on settle: re-center for the loop
     let scrollT;
     track.addEventListener("scroll", () => { clearTimeout(scrollT); scrollT = setTimeout(recenterLoop, 120); });
@@ -830,7 +868,22 @@
   function renderAdmin() {
     $("setShowPrices").checked = state.settings.showPrices;
     $("setShowBasket").checked = state.settings.showBasket;
-    renderAdminProducts(); renderAdminCategories(); renderAdminAds();
+    renderAdminDashboard(); renderAdminProducts(); renderAdminCategories(); renderAdminAds();
+  }
+
+  function renderAdminDashboard() {
+    const activeAds = state.ads.filter((a)=>a.active!==false).length;
+    const onSale = state.products.filter((p)=>effectivePrice(p)<Number(p.price)).length;
+    const cards = [
+      { icon:"🛍️", num:state.products.length, label:"منتج" },
+      { icon:"🏷️", num:state.categories.length, label:"فئة" },
+      { icon:"📣", num:`${activeAds}/${state.ads.length}`, label:"إعلان نشط" },
+      { icon:"🔥", num:onSale, label:"منتج بتخفيض" },
+      { icon: state.settings.showPrices ? "💲" : "🚫", num: state.settings.showPrices ? "ظاهرة" : "مخفية", label:"الأسعار" },
+      { icon: state.settings.showBasket ? "🛒" : "🚫", num: state.settings.showBasket ? "ظاهرة" : "مخفية", label:"السلة" },
+    ];
+    $("statGrid").innerHTML = cards.map((c)=>`
+      <div class="stat-card"><span class="stat-icon">${c.icon}</span><span class="stat-num">${esc(String(c.num))}</span><span class="stat-label">${esc(c.label)}</span></div>`).join("");
   }
 
   function renderAdminProducts() {
@@ -893,6 +946,15 @@
         <div class="field"><label>سعر التخفيض (${CURRENCY}) — اختياري</label><input id="f_saleprice" type="number" min="0" step="0.01" value="${editing && editing.salePrice!=null?editing.salePrice:""}" placeholder="اتركه فارغًا لعدم التخفيض" /></div>
       </div>
       <div class="field">
+        <label>الوحدة / نوع الكمية (اختياري)</label>
+        <select id="f_unit">
+          <option value="">— بدون —</option>
+          ${UNIT_OPTIONS.map((u)=>`<option value="${esc(u)}" ${editing && editing.unit===u?"selected":""}>${esc(u)}</option>`).join("")}
+          <option value="__other__" ${editing && editing.unit && !UNIT_OPTIONS.includes(editing.unit)?"selected":""}>أخرى...</option>
+        </select>
+        <input id="f_unit_other" style="margin-top:8px;display:${editing && editing.unit && !UNIT_OPTIONS.includes(editing.unit)?"":"none"}" placeholder="اكتب الوحدة" value="${editing && editing.unit && !UNIT_OPTIONS.includes(editing.unit)?esc(editing.unit):""}" />
+      </div>
+      <div class="field">
         <label>الفئة</label>
         <select id="f_cat"><option value="">— بدون —</option>${opts}</select>
         <button type="button" class="btn btn-ghost btn-sm" id="f_cat_new_btn" style="margin-top:8px;">+ تصنيف جديد</button>
@@ -920,6 +982,7 @@
       </div>
       <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-product="${editing?esc(editing.id):""}">حفظ</button></div>`;
     setupImageEditor("f", () => formUploadedPhoto, (v)=>formUploadedPhoto=v);
+    $("f_unit").addEventListener("change", (e)=>{ $("f_unit_other").style.display = e.target.value==="__other__" ? "" : "none"; });
     $("f_cat_new_btn").addEventListener("click", ()=>{
       const panel = $("f_cat_new_fields");
       panel.hidden = !panel.hidden;
@@ -978,12 +1041,13 @@
       if (salePrice >= price) { alert("سعر التخفيض يجب أن يكون أقل من السعر الأصلي"); return; }
       salePrice = Math.round(salePrice*100)/100;
     }
+    const unitSel = $("f_unit").value;
+    const unit = unitSel === "__other__" ? $("f_unit_other").value.trim() : unitSel;
     const newCatPanel = $("f_cat_new_fields");
     let categoryId = $("f_cat").value || null;
     if (newCatPanel && !newCatPanel.hidden) {
       const nameEn = $("f_newcat_en").value.trim(), nameAr = $("f_newcat_ar").value.trim();
       if (nameEn || nameAr) {
-        if (!nameEn || !nameAr) { alert("أدخل اسم التصنيف الجديد بالإنجليزية والعربية"); return; }
         try {
           const [row] = await sbInsert("categories", categoryToRow({ nameEn, nameAr }));
           const newCat = rowToCategory(row);
@@ -992,7 +1056,7 @@
         } catch (e) { alert("فشل إنشاء التصنيف: " + e.message); return; }
       }
     }
-    const row = productToRow({ titleEn, titleAr, descEn:$("f_descEn").value.trim(), descAr:$("f_descAr").value.trim(), price:Math.round(price*100)/100, salePrice, categoryId, img:effectiveFormImg() });
+    const row = productToRow({ titleEn, titleAr, descEn:$("f_descEn").value.trim(), descAr:$("f_descAr").value.trim(), price:Math.round(price*100)/100, salePrice, unit, categoryId, img:effectiveFormImg() });
     try { if (id) await sbUpdate("products", id, row); else await sbInsert("products", row); closeFormModal(); await reload(); }
     catch (e) { alert("فشل الحفظ: " + e.message); }
   }
@@ -1171,7 +1235,7 @@
   });
   window.addEventListener("hashchange", handleHash);
 
-  document.querySelector(".admin-tabs").addEventListener("click", (e)=>{ const btn=e.target.closest("[data-tab]"); if (!btn) return; document.querySelectorAll(".admin-tabs button").forEach((b)=>b.classList.remove("active")); document.querySelectorAll(".admin-pane").forEach((p)=>p.classList.remove("active")); btn.classList.add("active"); $("pane-"+btn.dataset.tab).classList.add("active"); });
+  document.querySelector(".admin-sidebar").addEventListener("click", (e)=>{ const btn=e.target.closest("[data-tab]"); if (!btn) return; document.querySelectorAll(".admin-sidebar button").forEach((b)=>b.classList.remove("active")); document.querySelectorAll(".admin-pane").forEach((p)=>p.classList.remove("active")); btn.classList.add("active"); $("pane-"+btn.dataset.tab).classList.add("active"); });
   $("adminClose").addEventListener("click", closeAdmin);
   $("adminLogout").addEventListener("click", ()=>signOut(false));
   $("addProductBtn").addEventListener("click", ()=>openProductForm(null));
