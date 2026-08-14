@@ -13,7 +13,7 @@
       --bg:#F5F0E8; --surface:#FFFFFF; --ink:#2A2A2A; --muted:#6f6a5f;
       --primary:#4D6B47; --secondary:#3A5235; --accent:#8FAF7A; --sale:#D9534F;
       --line:#e5dfd1; --card-sh:rgba(60,60,40,.10);
-      --wa:#25d366; --wa-dk:#1da851; --danger:#c0392b; --radius:16px; --header-h:62px;
+      --wa:#25d366; --wa-dk:#1da851; --danger:#c0392b; --radius:16px;
     }
     :root[data-theme="dark"] {
       --bg:#1A2318; --surface:#243022; --ink:#D4E8CF; --muted:#9fb298;
@@ -30,21 +30,139 @@
       transition: background .25s ease, color .25s ease;
     }
 
-    /* ============ HEADER ============ */
-    header { position: sticky; top: 0; z-index: 40; background: var(--app-grad); color:#fff; box-shadow: 0 3px 14px rgba(20,30,15,.28); }
-    .header-inner { min-height:var(--header-h); padding:10px 14px; display:flex; align-items:center; gap:10px; }
-    .brand { flex:none; display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none; -webkit-user-select:none; background:rgba(255,255,255,.94); border-radius:10px; padding:6px 11px; box-shadow:0 3px 8px rgba(0,0,0,.18); }
-    .brand .logo { height:28px; width:auto; display:block; }
-    .brand .wordmark { font-weight:800; color:var(--secondary); font-size:1.05rem; letter-spacing:.2px; }
-    .brand .wordmark small { display:block; font-size:.58rem; font-weight:600; opacity:.7; letter-spacing:2px; }
-    .header-spacer { flex:1; }
-    .icon-btn { flex:none; position:relative; background:rgba(255,255,255,.94); border:none; color:#3A5235; width:42px; height:42px; border-radius:17px; font-size:1.2rem; cursor:pointer; display:grid; place-items:center; transition:background .2s ease, transform .1s ease; }
-    .icon-btn:hover { background:#fff; } .icon-btn:active { transform:scale(.93); }
+    /* ============ TOP HERO — logo watermark behind the search bar (no heading) ============ */
+    /* registered so the ring can *animate* its radius/thickness — an unregistered custom property
+       flips instantly, which would make the band jump while the icons glide. */
+    @property --ring { syntax:"<length>"; inherits:true; initial-value:0px; }
+    @property --band { syntax:"<length>"; inherits:true; initial-value:0px; }
+    @property --act-scale { syntax:"<number>"; inherits:true; initial-value:1; }
+    @property --lbl-op { syntax:"<number>"; inherits:true; initial-value:0; }
+    /* --pocket-w: width of the pocket; --hero-line-y: top of the 2px rule, sitting flush with the
+       bottom edge of the 46px search pill (16px pad + 3px centring + 46px - 2px rule).
+       --pocket-top: how far the pocket rises into the promo; it must clear the action ring at its
+       hover radius. --logo-cx/--logo-cy are the logo circle's centre, which the ring orbits. */
+    .top-hero { position:relative; z-index:2; background:none; padding:16px 14px 10px;
+      --pocket-w:160px; --pocket-r:128px; --circle-w:88px; --pill-h:46px;
+      --pocket-top:96px; --act-btn:44px; --logo-lift:58px;
+      /* the pill is the tallest in-flow item, so it sets the row height: it spans 16px..16+--pill-h,
+         and the rule sits on its bottom edge. */
+      --hero-line-y:calc(16px + var(--pill-h) - 2px);
+      /* the action ring: a white band wrapped round the logo, cut into three segments. --ring is the
+         band's mid-radius (where the icons sit), --band its thickness. Touch/hover grows all three. */
+      --ring-off:30px; --band-rest:32px; --band-open:50px; --act-ico:1.45rem;
+      --ring:calc(var(--circle-w) / 2 + var(--ring-off)); --band:var(--band-rest); --act-scale:1; --lbl-op:0;
+      transition:--band .3s cubic-bezier(.34,1.3,.5,1),
+                 --act-scale .3s cubic-bezier(.34,1.3,.5,1), --lbl-op .2s ease;
+      --logo-cx:calc(12px + var(--circle-w) / 2);
+      /* the logo is flex-centred in the row, and its negative top margin shrinks the box it is
+         centred as — so its centre is not simply row-top minus the lift. */
+      --logo-cy:calc(16px + (var(--pill-h) - var(--circle-w) + var(--logo-lift) + 2px) / 2
+                     - var(--logo-lift) + var(--circle-w) / 2); }
+    [dir="rtl"] .top-hero { --arc-dir:-1; }
+    [dir="ltr"] .top-hero { --arc-dir:1; }
+    /* the pocket's curve turns into this rule, which runs straight out to the page edge */
+    .top-hero::after { content:""; position:absolute; top:var(--hero-line-y); height:2px; background:var(--line);
+      inset-inline-start:calc(var(--pocket-w) - 2px); inset-inline-end:0; z-index:0; pointer-events:none; }
+    /* circular logo badge on the right of the search bar — it rides up over the promo above it */
+    .brand-circle { position:relative; flex:none; width:var(--circle-w); height:var(--circle-w); margin:calc(var(--logo-lift) * -1) -2px -2px; border-radius:50%; background:#fff; display:grid; place-items:center; cursor:pointer; user-select:none; -webkit-user-select:none;
+      border:3px solid #fff; box-shadow:0 6px 18px rgba(0,0,0,.34), 0 0 0 5px rgba(255,255,255,.16); transition:box-shadow .25s ease, transform .15s ease; }
+    .brand-circle:hover { box-shadow:0 8px 22px rgba(0,0,0,.4), 0 0 0 8px rgba(255,255,255,.22); }
+    .brand-circle:active { transform:scale(.95); }
+    .brand-circle img { width:84%; height:84%; object-fit:contain; display:block; pointer-events:none; border-radius:50%; }
+    .top-hero .search-basket-row { position:relative; z-index:1; padding:0; }
+    /* the pocket: a page-coloured panel anchored to the top corner behind the logo. Its single
+       big rounded corner is the curve that sweeps out of the promo and tucks under the search bar. */
+    .brand-pocket { position:absolute; top:calc(var(--pocket-top) * -1); inset-inline-start:0; width:var(--pocket-w);
+      height:calc(var(--pocket-top) + var(--hero-line-y) + 2px); background:var(--bg);
+      border:2px solid var(--line); border-inline-start:none; border-bottom:none; z-index:0; pointer-events:none; }
+    [dir="rtl"] .brand-pocket { border-top-left-radius:var(--pocket-r); }
+    [dir="ltr"] .brand-pocket { border-top-right-radius:var(--pocket-r); }
+    /* the search pill butts onto the pocket's edge: no start cap, no start border — the pocket's
+       2px border IS the pill's start edge, so curve → pill → bottom rule read as one stroke. */
+    .top-hero .search-basket-row .search-box { margin-inline-start:calc(var(--pocket-w) - 22px - var(--circle-w));
+      height:var(--pill-h);
+      border-width:2px; border-inline-start:none; border-start-start-radius:0; border-end-start-radius:0; }
+    /* action ring: store dot + info + basket, orbiting the logo. .hero-actions is a zero-size anchor
+       pinned to the logo's centre; each child is placed on the orbit by angle (--a). */
+    .hero-actions { position:absolute; top:var(--logo-cy); inset-inline-start:var(--logo-cx); width:0; height:0; z-index:2;
+      --r-in:calc(var(--ring) - var(--band) / 2); --r-out:calc(var(--ring) + var(--band) / 2); }
+    /* the band: a square centred on the logo, painted only inside the three angular segments
+       (conic-gradient) and only between r-in and r-out (radial mask) — i.e. three arcs of one ring.
+       Authored for LTR and mirrored by scaleX(--arc-dir), so the arc always opens into the page. */
+    .hero-actions::before { content:""; position:absolute; top:0; inset-inline-start:0;
+      width:calc(var(--r-out) * 2); height:calc(var(--r-out) * 2); pointer-events:none;
+      transform:translate(calc(var(--arc-dir) * -50%), -50%) scaleX(var(--arc-dir));
+      /* two wedges, plus a disc of diameter --band at each wedge end. Each cap disc spans exactly
+         r-in..r-out, so the mask keeps it whole and the segment gains a round, smooth cap. */
+      /* only two segments — the status dot sits bare in the gap between them, no band behind it */
+      background:
+        radial-gradient(circle at calc(50% + var(--ring) * .3090) calc(50% - var(--ring) * .9511), #fff 0 calc(var(--band) / 2), transparent calc(var(--band) / 2 + .5px)),
+        radial-gradient(circle at calc(50% + var(--ring) * .4384) calc(50% - var(--ring) * .8988), #fff 0 calc(var(--band) / 2), transparent calc(var(--band) / 2 + .5px)),
+        radial-gradient(circle at calc(50% + var(--ring) * .9848) calc(50% + var(--ring) * .1736), #fff 0 calc(var(--band) / 2), transparent calc(var(--band) / 2 + .5px)),
+        radial-gradient(circle at calc(50% + var(--ring) * .9511) calc(50% + var(--ring) * .3090), #fff 0 calc(var(--band) / 2), transparent calc(var(--band) / 2 + .5px)),
+        conic-gradient(from 0deg at 50% 50%,
+          transparent 0 18deg, #fff 18deg 26deg,
+          transparent 26deg 100deg, #fff 100deg 108deg,
+          transparent 108deg 360deg);
+      -webkit-mask-image:radial-gradient(circle at 50% 50%, transparent calc(var(--r-in) - .5px), #000 var(--r-in) var(--r-out), transparent calc(var(--r-out) + .5px));
+      mask-image:radial-gradient(circle at 50% 50%, transparent calc(var(--r-in) - .5px), #000 var(--r-in) var(--r-out), transparent calc(var(--r-out) + .5px));
+      filter:drop-shadow(0 2px 6px rgba(0,0,0,.22)); }
+    .top-hero .hero-actions > * { position:absolute; top:0; inset-inline-start:0;
+      transform:
+        translate(calc(var(--arc-dir) * -50%), -50%)
+        rotate(calc(var(--arc-dir) * var(--a)))
+        translateY(calc(var(--ring) * -1))
+        rotate(calc(var(--arc-dir) * var(--a) * -1))
+        scale(var(--act-scale));
+      transition:none; }
+    /* angles are the segment centres — midway between each wedge's conic stops above */
+    .hero-actions > :nth-child(1) { --a:22deg;  --sin-a:.3746; --cos-a:.9272; }  /* opening hours */
+    .hero-actions > :nth-child(2) { --a:63deg;  --sin-a:.8910; --cos-a:.4540; }  /* store status  */
+    .hero-actions > :nth-child(3) { --a:104deg; --sin-a:.9703; --cos-a:-.2419; } /* basket        */
+    .status-slot { width:var(--act-btn); height:var(--act-btn); display:grid; place-items:center; }
+    .status-slot .status-dot { position:static; width:15px; height:15px; }
+    /* the buttons are just hit-areas + icon now; the band behind them supplies the surface */
+    .hero-actions .icon-btn,
+    .hero-actions .icon-btn:hover { width:var(--act-btn); height:var(--act-btn); border-radius:50%;
+      background:none; box-shadow:none; color:var(--primary); font-size:var(--act-ico); }
+    .hero-actions .badge { top:0; right:1px; }
+    /* the word that pops out past the ring when it opens */
+    /* each word sits straight out along its own segment's angle, so the three fan apart instead of
+       stacking on top of each other in one vertical column. */
+    .hero-actions .lbl { position:absolute; top:50%; inset-inline-start:50%;
+      --lbl-d:calc(var(--band) / 2 + 24px);
+      transform:
+        translate(calc(var(--arc-dir) * -50%), -50%)
+        translate(calc(var(--arc-dir) * var(--sin-a) * var(--lbl-d)), calc(var(--cos-a) * var(--lbl-d) * -1));
+      white-space:nowrap; pointer-events:none;
+      background:#fff; color:var(--primary); font-size:.7rem; font-weight:700; line-height:1;
+      padding:6px 10px; border-radius:999px; box-shadow:0 3px 10px rgba(0,0,0,.25);
+      opacity:var(--lbl-op); }
+    /* touching or hovering the logo — or the ring itself — thickens the band and enlarges the icons
+       and reveals the words. --ring is deliberately NOT changed, so nothing shifts position. */
+    .top-hero:has(.brand-circle:hover), .top-hero:has(.hero-actions:hover),
+    .top-hero:has(.brand-circle:active), .top-hero:has(.hero-actions:active),
+    .top-hero:has(.hero-actions:focus-within) {
+      --band:var(--band-open); --act-scale:1.3; --lbl-op:1; }
+    @media (prefers-reduced-motion:reduce){ .top-hero { transition:none; } }
+    @media (max-width:400px){
+      .top-hero { --pocket-w:166px; --pocket-r:48px; --circle-w:72px; --pocket-top:64px; --act-btn:40px; --logo-lift:44px;
+        --ring-off:24px; --band-rest:28px; --band-open:34px; --act-ico:1.3rem; }
+    }
+    .icon-btn { flex:none; position:relative; background:#fff; border:none; color:var(--primary); width:44px; height:44px; border-radius:15px; font-size:1.15rem; cursor:pointer; display:grid; place-items:center; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .2s ease, color .2s ease, transform .1s ease; }
+    .icon-btn:hover { background:var(--primary); color:#fff; } .icon-btn:active { transform:scale(.93); }
     .badge { position:absolute; top:-5px; right:-5px; min-width:21px; height:21px; padding:0 6px; background:var(--sale); color:#fff; font-size:.72rem; font-weight:700; border-radius:999px; display:grid; place-items:center; border:2px solid #2f4a2a; transform:scale(0); transition:transform .18s cubic-bezier(.3,1.4,.5,1); }
     .badge.show { transform:scale(1); }
-    @media (max-width:420px){ .brand .wordmark { display:none; } .brand { padding:6px 9px; } }
 
-    /* ============ SEARCH + BASKET ROW (under the promo) ============ */
+    /* store-status dot on the info button (green all open / amber some / red all closed) */
+    .status-dot { position:absolute; width:14px; height:14px; border-radius:50%; background:var(--muted); border:2px solid var(--line); box-shadow:0 1px 3px rgba(0,0,0,.35); }
+    .status-dot.st-open { background:#2FBF52; }
+    .status-dot.st-partial { background:#E9B32A; }
+    .status-dot.st-closed { background:#E0483C; }
+    .status-line { display:flex; align-items:center; gap:8px; font-weight:700; font-size:.9rem; margin:-6px 0 10px; }
+    .status-line .dot { width:12px; height:12px; border-radius:50%; background:var(--muted); flex:none; }
+
+    /* ============ SEARCH + BASKET ROW ============ */
     .search-basket-row { display:flex; align-items:center; gap:10px; padding:12px 16px 4px; }
     .search-basket-row .search-box {
       flex:1; max-width:none; min-width:0; display:flex; align-items:center; gap:9px; height:46px; padding:0 14px;
@@ -54,8 +172,8 @@
     .search-basket-row .search-icon svg { width:19px; height:19px; }
     .search-basket-row input { flex:1; min-width:0; background:none; border:none; outline:none; color:var(--ink); font-size:.95rem; font-family:inherit; }
     .search-basket-row input::placeholder { color:var(--muted); }
-    .basket-icon-btn { background:var(--primary); color:#fff; box-shadow:0 2px 8px var(--card-sh); }
-    .basket-icon-btn:hover { background:var(--secondary); }
+    .basket-icon-btn { background-color:#fff; box-shadow:0 2px 8px var(--card-sh); }
+    .basket-icon-btn:hover { background:var(--primary); color:#fff; }
 
     /* ============ ADS / PROMO CAROUSEL ============ */
     .promo-track { direction:ltr; display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 16px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
@@ -76,15 +194,31 @@
     body[data-lang="ar"] .promo-card .p-title, body[data-lang="ar"] .promo-card .p-sub { text-align:right; }
     body[data-lang="ar"] .promo-card .p-icon, body[data-lang="ar"] .promo-card .p-pill { align-self:flex-end; }
 
-    /* ============ SPECIAL OFFERS SECTION ============ */
-    .offer-section .cat-title { display:flex; align-items:center; gap:10px; }
-    .offer-badge { display:inline-block; background:var(--secondary); color:#fff; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:999px; }
-    .offer-banner { background:var(--surface); border:1px solid var(--accent); border-radius:14px; padding:14px 16px; margin:14px 16px 0; display:flex; flex-direction:column; gap:4px; }
-    .offer-banner-title { font-weight:800; font-size:1rem; }
-    .offer-banner-sub { color:var(--muted); font-size:.85rem; }
+    /* ============ SPECIAL OFFERS SECTION (one scrollable row per offer) ============ */
+    .offer-badge { display:inline-block; background:var(--secondary); color:#fff; font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:999px; }
+    .offer-row-block { margin-top:16px; }
+    .offer-row-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 16px 8px; cursor:pointer; }
+    .offer-row-title { margin:0; font-size:1rem; font-weight:800; display:flex; align-items:center; gap:8px; min-width:0; }
+    .offer-row-title span.txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .offer-more-link { flex:none; background:#fff; color:var(--primary); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.75rem; font-weight:700; font-family:inherit; cursor:pointer; transition:background .2s ease, color .2s ease; }
+    .offer-more-link:hover { background:var(--primary); color:#fff; }
+    .offer-row-track { display:flex; gap:10px; overflow-x:auto; padding:2px 16px 6px; scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; }
+    .offer-row-track::-webkit-scrollbar { display:none; }
+    .offer-row-track .card { flex:0 0 132px; scroll-snap-align:start; }
+    @media (min-width:560px){ .offer-row-track .card { flex-basis:150px; } }
+    .offer-more-tile { flex:0 0 116px; scroll-snap-align:start; background:#fff; color:var(--primary); border:1.5px dashed var(--line); border-radius:12px; font-family:inherit; font-size:.82rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; transition:background .2s ease, color .2s ease, border-color .2s ease; }
+    .offer-more-tile .plus { font-size:1.5rem; line-height:1; }
+    .offer-more-tile:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+    /* ============ OFFER PAGE (#offer/<id>) ============ */
+    .offer-hero { padding:18px 16px 6px; }
+    .offer-hero img { width:100%; max-height:200px; object-fit:cover; border-radius:14px; margin-bottom:12px; }
+    .offer-hero h1 { margin:0 0 6px; font-size:1.35rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .offer-hero p { margin:0; color:var(--muted); font-size:.9rem; }
+    .offer-page-grid { padding:12px 16px 40px; }
 
     /* ============ CATEGORY TAB BAR ============ */
-    .tabbar { position:sticky; top:var(--header-h); z-index:30; display:flex; gap:2px; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--line); padding:0 8px; scrollbar-width:none; }
+    .tabbar { position:sticky; top:0; z-index:30; display:flex; gap:2px; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--line); padding:0 8px; scrollbar-width:none; }
     .tabbar::-webkit-scrollbar { display:none; }
     .tab { flex:none; background:none; border:none; padding:13px 14px; font-weight:700; font-size:.9rem; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
     .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
@@ -92,31 +226,32 @@
     /* ============ MENU ============ */
     main { padding:6px 16px 120px; }
     #offersSection { margin-top:6px; }
-    .cat-section { display:none; margin-top:22px; scroll-margin-top:108px; }
+    .cat-section { display:none; margin-top:18px; scroll-margin-top:60px; }
     .cat-section.show { display:block; }
-    .cat-title { font-size:1.15rem; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); color:var(--secondary); }
+    .cat-title { font-size:1.02rem; margin:0 0 10px; padding-bottom:7px; border-bottom:2px solid var(--line); color:var(--secondary); }
     :root[data-theme="dark"] .cat-title { color:var(--ink); }
-    .grid { display:grid; gap:14px; grid-template-columns:repeat(2,1fr); }
-    @media (min-width:560px){ .grid { grid-template-columns:repeat(3,1fr); } }
-    @media (min-width:900px){ .grid { grid-template-columns:repeat(4,1fr); } }
-    .card { cursor:pointer; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 8px var(--card-sh); transition:transform .15s ease, box-shadow .2s ease; }
-    .card:hover { transform:translateY(-3px); box-shadow:0 8px 22px var(--card-sh); }
-    .thumb { aspect-ratio:1/1; display:grid; place-items:center; font-size:2.6rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
+    .grid { display:grid; gap:10px; grid-template-columns:repeat(2,1fr); }
+    @media (min-width:430px){ .grid { grid-template-columns:repeat(3,1fr); } }
+    @media (min-width:700px){ .grid { grid-template-columns:repeat(4,1fr); } }
+    @media (min-width:980px){ .grid { grid-template-columns:repeat(5,1fr); } }
+    .card { cursor:pointer; background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 6px var(--card-sh); transition:transform .15s ease, box-shadow .2s ease; }
+    .card:hover { transform:translateY(-2px); box-shadow:0 6px 16px var(--card-sh); }
+    .thumb { aspect-ratio:1/1; display:grid; place-items:center; font-size:2rem; overflow:hidden; background:radial-gradient(120% 120% at 20% 10%, color-mix(in srgb, var(--accent) 35%, var(--surface)) 0%, var(--surface) 75%); color:var(--secondary); }
     .thumb img { width:100%; height:100%; object-fit:var(--thumb-fit, cover); }
-    .card .body { padding:11px 12px 13px; display:flex; flex-direction:column; gap:5px; flex:1; }
-    .card h3 { margin:0; font-size:.96rem; line-height:1.25; }
-    .card .desc { margin:0; color:var(--muted); font-size:.8rem; flex:1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .card .row { display:flex; align-items:center; justify-content:space-between; margin-top:6px; gap:6px; }
-    .price { font-weight:800; color:var(--primary); font-size:1rem; }
-    .price-old { text-decoration:line-through; opacity:.6; font-weight:600; font-size:.85em; margin-inline-end:6px; }
+    .card .body { padding:7px 8px 9px; display:flex; flex-direction:column; gap:2px; flex:1; }
+    .card h3 { margin:0; font-size:.82rem; line-height:1.22; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card .desc { margin:0; color:var(--muted); font-size:.7rem; flex:1; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+    .card .row { display:flex; align-items:center; justify-content:space-between; margin-top:4px; gap:4px; }
+    .price { font-weight:800; color:var(--primary); font-size:.85rem; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .price-old { text-decoration:line-through; opacity:.6; font-weight:600; font-size:.85em; margin-inline-end:4px; }
     .price-sale { color:var(--sale); }
-    .unit-label { font-size:.75em; font-weight:600; color:var(--muted); }
-    .add-btn { background:var(--primary); color:#fff; border:none; width:34px; height:34px; border-radius:10px; font-weight:700; font-size:1.2rem; line-height:1; cursor:pointer; flex:none; transition:background .2s ease, transform .1s ease; }
-    .add-btn:hover { background:var(--secondary); } .add-btn:active { transform:scale(.9); }
+    .unit-label { font-size:.72em; font-weight:600; color:var(--muted); }
+    .add-btn { background:#fff; color:var(--primary); border:1px solid var(--line); width:28px; height:28px; border-radius:8px; font-weight:700; font-size:1.05rem; line-height:1; cursor:pointer; flex:none; transition:background .2s ease, color .2s ease, transform .1s ease; }
+    .add-btn:hover { background:var(--primary); color:#fff; } .add-btn:active { transform:scale(.9); }
     .empty-menu { text-align:center; color:var(--muted); margin-top:60px; }
 
     /* ============ PROMO CONTROLS (swipe-only) ============ */
-    .promo-wrap { position:relative; }
+    .promo-wrap { position:relative; padding-top:10px; }
     .promo-track { cursor:grab; } .promo-track:active { cursor:grabbing; }
 
     /* ============ PRODUCT DETAIL PAGE ============ */
@@ -280,6 +415,11 @@
     .check-list { max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; padding:8px 12px; background:var(--surface); }
     .check-list label { display:flex; align-items:center; gap:8px; padding:5px 0; font-weight:500; font-size:.9rem; margin:0; }
     .check-list label input { width:auto; }
+    .of-prod-row { display:flex; align-items:center; gap:10px; padding:3px 0; }
+    .of-prod-row .of-inc { flex:1; min-width:0; }
+    .of-prod-row .of-inc span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .of-prod-row .of-feat { flex:none; color:var(--muted); font-size:.78rem; white-space:nowrap; }
+    .of-prod-row .of-feat.dim { opacity:.4; }
     .hours-editor .hours-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); font-size:.85rem; }
     .hours-editor .hours-row:last-child { border-bottom:none; }
     .hours-day { width:66px; flex:none; color:var(--muted); }
@@ -310,36 +450,59 @@
     .boot-card code { background:color-mix(in srgb, var(--accent) 22%, var(--surface)); padding:2px 6px; border-radius:6px; font-size:.85rem; }
     .spinner { width:34px; height:34px; border:4px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 14px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ============ BUTTON STYLE — every button is white, primary on hover ============ */
+    .btn, .add-btn, .icon-btn, .checkout-btn, .ps-addbtn, .ps-checkout, .ps-stepper button,
+    .qty button, .ps-back, .close-btn, .tab, .admin-sidebar button, .offer-more-link, .offer-more-tile,
+    .gallery-add-tile, .ci-remove, .search-icon {
+      transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .1s ease;
+    }
+    .btn-primary, .btn-ghost, .ps-addbtn, .ps-stepper button, .qty button {
+      background:#fff; color:var(--primary); border:1px solid var(--line);
+    }
+    .btn-primary:hover, .btn-ghost:hover, .ps-addbtn:hover, .ps-stepper button:hover, .qty button:hover {
+      background:var(--primary); color:#fff; border-color:var(--primary);
+    }
+    .btn-danger, .ci-remove { background:#fff; color:var(--danger); border:1px solid var(--line); }
+    .btn-danger:hover, .ci-remove:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
+    .checkout-btn, .ps-checkout { background:#fff; color:var(--wa-dk); border:1px solid var(--line); }
+    .checkout-btn:hover:not(:disabled), .ps-checkout:hover { background:var(--wa); color:#fff; border-color:var(--wa); }
+    .ps-back, .close-btn { background:#fff; color:var(--primary); border:none; }
+    .ps-back:hover, .close-btn:hover { background:var(--primary); color:#fff; }
+    .close-btn { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; }
+    .admin-sidebar button.active { background:#fff; color:var(--primary); border:1px solid var(--primary); }
+    .admin-sidebar button:hover, .admin-sidebar button.active:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .tab.active { color:var(--primary); }
+    .tab:hover { color:var(--primary); }
   </style>
 </head>
 <body data-lang="ar">
-
-  <!-- ============================ HEADER ============================ -->
-  <header>
-    <div class="header-inner">
-      <div class="brand" id="brand" title="Press &amp; hold to open the admin panel">
-        <img class="logo" src="Sham_logono background.png" alt="Sham logo">
-        <span class="wordmark">بهارات الشام<small>بهارات وعطارة</small></span>
-      </div>
-      <div class="header-spacer"></div>
-      <button class="icon-btn" id="infoBtn" aria-label="معلومات الفروع" title="فروعنا وأوقات العمل">ℹ️</button>
-    </div>
-  </header>
 
   <!-- ============================ ADS / PROMO CAROUSEL ============================ -->
   <div class="promo-wrap" id="promoWrap">
     <div class="promo-track" id="promoTrack"></div>
   </div>
 
-  <!-- ============================ SEARCH + BASKET (under the promo) ============================ -->
-  <div class="search-basket-row" id="searchBasketRow">
-    <div class="search-box open" id="searchBox">
-      <button type="button" class="search-icon" id="searchIconBtn" aria-label="Search" tabindex="-1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      </button>
-      <input type="text" id="searchInput" autocomplete="off" enterkeyhint="search" />
+  <!-- ====== SEARCH BAR (under the promo) — logo watermark behind it, long-press = admin ====== -->
+  <div class="top-hero">
+    <span class="brand-pocket" aria-hidden="true"></span>
+    <!-- ring order, top to bottom: opening hours, store status, basket -->
+    <div class="hero-actions">
+      <button class="icon-btn" id="infoBtn" aria-label="معلومات الفروع" title="فروعنا وأوقات العمل">ℹ️<span class="lbl">أوقات العمل</span></button>
+      <span class="status-slot"><span class="status-dot" id="storeDot"></span><span class="lbl" id="storeWord"></span></span>
+      <button class="icon-btn basket-icon-btn" id="cartBtn" aria-label="Open cart">🛒<span class="badge" id="badge">0</span><span class="lbl">السلة</span></button>
     </div>
-    <button class="icon-btn basket-icon-btn" id="cartBtn" aria-label="Open cart">🛒<span class="badge" id="badge">0</span></button>
+    <div class="search-basket-row" id="searchBasketRow">
+      <div class="brand-circle" id="brand" title="اضغط مطولاً لفتح لوحة الإدارة">
+        <img src="Sham_logono background.png" alt="بهارات الشام">
+      </div>
+      <div class="search-box open" id="searchBox">
+        <button type="button" class="search-icon" id="searchIconBtn" aria-label="Search" tabindex="-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        <input type="text" id="searchInput" autocomplete="off" enterkeyhint="search" />
+      </div>
+    </div>
   </div>
 
   <!-- ============================ SPECIAL OFFERS SECTION ============================ -->
@@ -370,6 +533,15 @@
       <button class="icon-btn" id="psCart" aria-label="Open cart">🛒<span class="badge" id="psBadge">0</span></button>
     </div>
     <div class="ps-body" id="productBody"></div>
+  </div>
+
+  <!-- ============================ OFFER PAGE (products of one offer) ============================ -->
+  <div class="product-screen" id="offerScreen">
+    <div class="ps-top">
+      <button class="ps-back" id="ofBack" aria-label="Back">←</button>
+      <button class="icon-btn" id="ofCart" aria-label="Open cart">🛒<span class="badge" id="ofBadge">0</span></button>
+    </div>
+    <div class="ps-body" id="offerBody"></div>
   </div>
 
   <!-- ============================ INFO SHEET (branches & hours) ============================ -->
@@ -433,6 +605,21 @@
                 <option value="contain">احتواء (عرض الصورة كاملة بدون قص)</option>
               </select>
             </div>
+            <div class="field" style="margin-top:16px;max-width:340px;">
+              <label>حالة المتجر (النقطة بجانب زر المعلومات)</label>
+              <select id="setStoreStatus">
+                <option value="auto">تلقائي (حسب أوقات عمل الفروع)</option>
+                <option value="open">🟢 جميع الفروع مفتوحة</option>
+                <option value="partial">🟡 بعض الفروع مفتوحة</option>
+                <option value="closed">🔴 جميع الفروع مغلقة</option>
+              </select>
+              <div class="hint">الاختيار اليدوي يتجاوز جدول أوقات العمل.</div>
+            </div>
+            <div class="field" style="margin-top:16px;max-width:340px;">
+              <label>عدد منتجات العرض في الصفحة الرئيسية</label>
+              <input id="setOfferRowMax" type="number" min="1" max="30" step="1" />
+              <div class="hint">إذا زاد عدد منتجات العرض عن هذا الرقم تظهر بطاقة «عرض المزيد».</div>
+            </div>
           </div>
         </div>
       </div>
@@ -489,12 +676,12 @@
   const t = (k) => STR[k];
 
   /* ---------- State ---------- */
-  let state = { categories: [], products: [], ads: [], offers: [], branches: [], settings: { showPrices: true, showBasket: true, imageFit: "cover" } };
+  let state = { categories: [], products: [], ads: [], offers: [], branches: [], settings: { showPrices: true, showBasket: true, imageFit: "cover", storeStatus: "auto", offerRowMax: 8 } };
   const lang = "ar";
   let accessToken = null;
   let searchQuery = "";
   const cart = {};
-  let formImages = [], adFormImages = [], offerUploadedPhoto = null, currentProductId = null;
+  let formImages = [], adFormImages = [], offerUploadedPhoto = null, currentProductId = null, currentOfferId = null;
   let formUploadedPhoto = null, adUploadedPhoto = null;
 
   /* ---------- Utilities ---------- */
@@ -539,12 +726,13 @@
   const productToRow = (p) => ({ title_en:p.titleEn, title_ar:p.titleAr, desc_en:p.descEn, desc_ar:p.descAr, price:p.price, sale_price:(p.salePrice!=null?p.salePrice:null), unit:(p.unit||null), img:p.img, images:(p.images||[]), category_id:p.categoryId });
   const rowToCategory = (r) => ({ id:r.id, nameEn:r.name_en||"", nameAr:r.name_ar||"" });
   const categoryToRow = (c) => ({ name_en:c.nameEn, name_ar:c.nameAr });
-  const rowToSettings = (r) => ({ showPrices:r.show_prices!==false, showBasket:r.show_basket!==false, imageFit:(r.image_fit==="contain"?"contain":"cover") });
-  const settingsToRow = (s) => ({ show_prices:!!s.showPrices, show_basket:!!s.showBasket, image_fit:(s.imageFit==="contain"?"contain":"cover") });
+  const STORE_STATUSES = ["auto","open","partial","closed"];
+  const rowToSettings = (r) => ({ showPrices:r.show_prices!==false, showBasket:r.show_basket!==false, imageFit:(r.image_fit==="contain"?"contain":"cover"), storeStatus:(STORE_STATUSES.includes(r.store_status)?r.store_status:"auto"), offerRowMax:(Number(r.offer_row_max)>0?Number(r.offer_row_max):8) });
+  const settingsToRow = (s) => ({ show_prices:!!s.showPrices, show_basket:!!s.showBasket, image_fit:(s.imageFit==="contain"?"contain":"cover"), store_status:(STORE_STATUSES.includes(s.storeStatus)?s.storeStatus:"auto"), offer_row_max:(Number(s.offerRowMax)>0?Number(s.offerRowMax):8) });
   const rowToAd = (r) => ({ id:r.id, titleEn:r.title_en||"", titleAr:r.title_ar||"", subEn:r.sub_en||"", subAr:r.sub_ar||"", g1:r.g1||"#B71C1C", g2:r.g2||"#EF5350", img:r.img||null, images:Array.isArray(r.images)?r.images:[], linkType:r.link_type||"none", linkCategoryId:r.link_category_id||null, linkProductId:r.link_product_id||null, linkUrl:r.link_url||"", active:r.active!==false });
   const adToRow = (a) => ({ title_en:a.titleEn, title_ar:a.titleAr, sub_en:a.subEn, sub_ar:a.subAr, g1:a.g1, g2:a.g2, img:a.img, images:(a.images||[]), link_type:a.linkType, link_category_id:a.linkCategoryId, link_product_id:a.linkProductId, link_url:a.linkUrl, active:a.active });
-  const rowToOffer = (r) => ({ id:r.id, titleAr:r.title_ar||"", type:r.type||"percent_off", percent:(r.percent!=null?Number(r.percent):null), buyX:(r.buy_x!=null?Number(r.buy_x):null), payY:(r.pay_y!=null?Number(r.pay_y):null), minAmount:(r.min_amount!=null?Number(r.min_amount):null), discountAmount:(r.discount_amount!=null?Number(r.discount_amount):null), productIds:Array.isArray(r.product_ids)?r.product_ids:[], image:r.image||null, showInPopup:!!r.show_in_popup, active:r.active!==false });
-  const offerToRow = (o) => ({ title_ar:o.titleAr, type:o.type, percent:o.percent, buy_x:o.buyX, pay_y:o.payY, min_amount:o.minAmount, discount_amount:o.discountAmount, product_ids:(o.productIds||[]), image:o.image, show_in_popup:!!o.showInPopup, active:!!o.active });
+  const rowToOffer = (r) => ({ id:r.id, titleAr:r.title_ar||"", type:r.type||"percent_off", percent:(r.percent!=null?Number(r.percent):null), buyX:(r.buy_x!=null?Number(r.buy_x):null), payY:(r.pay_y!=null?Number(r.pay_y):null), minAmount:(r.min_amount!=null?Number(r.min_amount):null), discountAmount:(r.discount_amount!=null?Number(r.discount_amount):null), productIds:Array.isArray(r.product_ids)?r.product_ids:[], featuredProductIds:Array.isArray(r.featured_product_ids)?r.featured_product_ids:[], image:r.image||null, showInPopup:!!r.show_in_popup, active:r.active!==false });
+  const offerToRow = (o) => ({ title_ar:o.titleAr, type:o.type, percent:o.percent, buy_x:o.buyX, pay_y:o.payY, min_amount:o.minAmount, discount_amount:o.discountAmount, product_ids:(o.productIds||[]), featured_product_ids:(o.featuredProductIds||[]), image:o.image, show_in_popup:!!o.showInPopup, active:!!o.active });
   const rowToBranch = (r) => ({ id:r.id, nameAr:r.name_ar||"", addressAr:r.address_ar||"", phone:r.phone||"", hours:(Array.isArray(r.hours) && r.hours.length===7 ? r.hours : defaultHours()) });
   const branchToRow = (b) => ({ name_ar:b.nameAr, address_ar:b.addressAr, phone:b.phone, hours:(b.hours||defaultHours()) });
 
@@ -561,12 +749,24 @@
   async function sbWrite(method, table, id, row) {
     let url = `${SUPABASE_URL}/rest/v1/${table}`;
     if (id) url += `?id=eq.${id}`;
-    const opts = { method, headers: { ...sbHeaders(true), Prefer: "return=representation" } };
-    if (row) opts.body = JSON.stringify(row);
-    const r = await fetch(url, opts);
-    if (r.status === 401 || r.status === 403) { signOut(true); throw new Error("الرجاء تسجيل الدخول مجددًا."); }
-    if (!r.ok) throw new Error(await r.text());
-    return method === "DELETE" ? null : r.json();
+    // Columns added in later versions (store_status / offer_row_max / featured_product_ids) may not
+    // exist yet in an older database — drop the unknown column and retry instead of failing the save.
+    let body = row;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const opts = { method, headers: { ...sbHeaders(true), Prefer: "return=representation" } };
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      if (r.status === 401 || r.status === 403) { signOut(true); throw new Error("الرجاء تسجيل الدخول مجددًا."); }
+      if (r.ok) return method === "DELETE" ? null : r.json();
+      const txt = await r.text();
+      const m = txt.match(/Could not find the '([^']+)' column/);
+      if (m && body && Object.prototype.hasOwnProperty.call(body, m[1])) {
+        body = { ...body }; delete body[m[1]];
+        continue;
+      }
+      throw new Error(txt);
+    }
+    throw new Error("تعذّر الحفظ.");
   }
   const sbInsert = (table, row) => sbWrite("POST", table, null, row);
   const sbUpdate = (table, id, row) => sbWrite("PATCH", table, id, row);
@@ -601,12 +801,47 @@
       if (rows && rows[0]) state.settings = rowToSettings(rows[0]);
     } catch (e) {}
   }
-  const renderAll = () => { applyBasketVisibility(); applyImageFit(); renderPromos(); renderOffersSection(); renderTabBar(); renderMenu(); renderCart(); if (currentProductId) renderProduct(currentProductId); };
+  const renderAll = () => { applyBasketVisibility(); applyImageFit(); renderStoreDot(); renderPromos(); renderOffersSection(); renderTabBar(); renderMenu(); renderCart(); if (currentProductId) renderProduct(currentProductId); if (currentOfferId) renderOfferPage(currentOfferId); };
   function applyBasketVisibility() {
     const show = basketVisible();
     if ($("cartBtn")) $("cartBtn").style.display = show ? "" : "none";
     if ($("psCart")) $("psCart").style.display = show ? "" : "none";
+    if ($("ofCart")) $("ofCart").style.display = show ? "" : "none";
     if (!show) closeCart();
+  }
+
+  /* ---------- store open/closed status (info-button dot) ---------- */
+  const STORE_STATUS_LABEL = { open:"جميع الفروع مفتوحة الآن", partial:"بعض الفروع مفتوحة الآن", closed:"جميع الفروع مغلقة الآن" };
+  // short form for the corner chip — the long label stays as the tooltip / aria-label
+  const STORE_STATUS_WORD = { open:"مفتوح", partial:"مفتوح جزئياً", closed:"مغلق" };
+  const hhmmToMinutes = (v) => { const m = /^(\d{1,2}):(\d{2})/.exec(v||""); return m ? parseInt(m[1],10)*60 + parseInt(m[2],10) : null; };
+  function branchIsOpenNow(b, now) {
+    const weekday = (now.getDay() + 6) % 7;                 // AR_WEEKDAYS starts on Monday (0)
+    const h = (b.hours||[]).find((x)=>Number(x.weekday)===weekday);
+    if (!h || h.isClosed) return false;
+    const open = hhmmToMinutes(h.opensAt), close = hhmmToMinutes(h.closesAt);
+    if (open == null || close == null) return false;
+    const mins = now.getHours()*60 + now.getMinutes();
+    return close > open ? (mins >= open && mins < close) : (mins >= open || mins < close); // handles past-midnight
+  }
+  function storeStatus() {
+    const manual = state.settings.storeStatus || "auto";
+    if (manual !== "auto") return manual;
+    const branches = state.branches;
+    if (!branches.length) return "open";
+    const now = new Date();
+    const openCount = branches.filter((b)=>branchIsOpenNow(b, now)).length;
+    return openCount === branches.length ? "open" : (openCount > 0 ? "partial" : "closed");
+  }
+  function renderStoreDot() {
+    const dot = $("storeDot"); if (!dot) return;
+    const s = storeStatus();
+    dot.className = "status-dot st-" + s;
+    dot.title = STORE_STATUS_LABEL[s];
+    const word = $("storeWord");
+    if (word) word.textContent = STORE_STATUS_WORD[s];
+    const btn = $("infoBtn");
+    if (btn) btn.title = STORE_STATUS_LABEL[s] + " — فروعنا وأوقات العمل";
   }
   function applyImageFit() {
     document.documentElement.style.setProperty("--thumb-fit", state.settings.imageFit === "contain" ? "contain" : "cover");
@@ -618,6 +853,8 @@
     state.settings.showPrices = $("setShowPrices").checked;
     state.settings.showBasket = $("setShowBasket").checked;
     state.settings.imageFit = $("setImageFit").value;
+    state.settings.storeStatus = $("setStoreStatus").value;
+    state.settings.offerRowMax = Math.max(1, Math.min(30, parseInt($("setOfferRowMax").value, 10) || 8));
     saveSettings().catch((e)=>alert("فشل حفظ الإعدادات: " + e.message));
     renderAll();
   }
@@ -766,24 +1003,39 @@
     if (o.type === "min_purchase_discount") return `خصم ${money(o.discountAmount||0)} عند الشراء بحد أدنى ${money(o.minAmount||0)}`;
     return "";
   }
+  /* Products of an offer, and the subset the admin picked for the main page row.
+     Anything not picked lives on the offer page behind "عرض المزيد". */
+  const offerRowMax = () => Math.max(1, Number(state.settings.offerRowMax) || 8);
+  function offerProducts(o) {
+    const ids = o.productIds || [];
+    return state.products.filter((p)=>ids.includes(p.id));
+  }
+  function offerMainProducts(o) {
+    const all = offerProducts(o);
+    const featured = (o.featuredProductIds || []).filter((id)=>(o.productIds||[]).includes(id));
+    const list = featured.length ? all.filter((p)=>featured.includes(p.id)) : all;
+    return list.slice(0, offerRowMax());
+  }
   function renderOffersSection() {
     const box = $("offersSection");
     const offers = activeOffers();
     if (!offers.length || searchQuery.trim()) { box.style.display = "none"; box.innerHTML = ""; return; }
     box.style.display = "";
     box.innerHTML = offers.map((o)=>{
-      if (o.type === "min_purchase_discount") {
-        if (!pricesVisible()) return "";
-        return `<div class="offer-banner" data-offer="${esc(o.id)}">
-          <div class="offer-banner-title">${esc(o.titleAr||"")}</div>
-          <div class="offer-banner-sub">اشترِ بقيمة ${money(o.minAmount)} ووفّر ${money(o.discountAmount)}</div>
-        </div>`;
-      }
-      const prods = state.products.filter((p)=>(o.productIds||[]).includes(p.id));
-      if (!prods.length) return "";
-      return `<section class="cat-section show offer-section">
-        <h2 class="cat-title">${esc(o.titleAr||"")} <span class="offer-badge">${esc(offerBadgeText(o))}</span></h2>
-        <div class="grid">${prods.map(productCardHTML).join("")}</div>
+      const all = offerProducts(o);
+      if (!all.length) return "";
+      const main = offerMainProducts(o);
+      const hasMore = all.length > main.length;
+      const badge = offerBadgeText(o);
+      return `<section class="offer-row-block">
+        <div class="offer-row-head" data-offer-open="${esc(o.id)}">
+          <h2 class="offer-row-title"><span class="txt">${esc(o.titleAr||"")}</span>${badge?`<span class="offer-badge">${esc(badge)}</span>`:""}</h2>
+          <button type="button" class="offer-more-link" data-offer-open="${esc(o.id)}">عرض الكل (${all.length})</button>
+        </div>
+        <div class="offer-row-track">
+          ${main.map(productCardHTML).join("")}
+          ${hasMore ? `<button type="button" class="offer-more-tile" data-offer-open="${esc(o.id)}"><span class="plus">＋</span><span>عرض المزيد</span></button>` : ""}
+        </div>
       </section>`;
     }).join("");
   }
@@ -791,7 +1043,7 @@
   /* ================================================================
      TAB BAR + MENU
      ================================================================ */
-  const SCROLL_OFFSET = 108;
+  const SCROLL_OFFSET = 8;   // the tab bar now sticks to the very top (no header)
   const sectionId = (catId) => "cat-" + (catId || "other");
   let currentCatId = null;
   function firstSectionId() {
@@ -842,10 +1094,10 @@
       const items = state.products.filter((p)=>p.categoryId===cat.id);
       if (!items.length) return;
       items.forEach((p)=>used.add(p.id));
-      html += renderSection(sectionId(cat.id), pick(cat.nameEn,cat.nameAr), items);
+      html += renderSection(sectionId(cat.id), "", items);   // the tab bar already names the category
     });
     const orphans = state.products.filter((p)=>!used.has(p.id));
-    if (orphans.length) html += renderSection("cat-other", t("other"), orphans);
+    if (orphans.length) html += renderSection("cat-other", "", orphans);
     root.innerHTML = html;
     const target = ($(currentCatId) ? currentCatId : firstSectionId());
     if (target) activateCategory(target);
@@ -853,7 +1105,7 @@
   function renderSection(id, title, items) {
     return `
       <section class="cat-section" id="${id}">
-        <h2 class="cat-title">${esc(title)}</h2>
+        ${title ? `<h2 class="cat-title">${esc(title)}</h2>` : ""}
         <div class="grid">${items.map(productCardHTML).join("")}</div>
       </section>`;
   }
@@ -913,6 +1165,8 @@
     $("badge").classList.toggle("show", count>0);
     const psb = $("psBadge");
     if (psb) { psb.textContent = count; psb.classList.toggle("show", count>0); }
+    const ofb = $("ofBadge");
+    if (ofb) { ofb.textContent = count; ofb.classList.toggle("show", count>0); }
     if (currentProductId) renderProduct(currentProductId);
 
     if (ids.length === 0) {
@@ -961,16 +1215,42 @@
      PRODUCT DETAIL PAGE (#product/<id>) + related/favorites/most-viewed
      ================================================================ */
   function openProduct(id) { if (!findProduct(id)) return; location.hash = "product/" + id; }
-  function closeProduct() { if (location.hash) { if (history.length > 1) history.back(); else location.hash = ""; } }
+  function closeHashScreen() { if (location.hash) { if (history.length > 1) history.back(); else location.hash = ""; } }
+  const closeProduct = closeHashScreen;
+  function openOfferPage(id) { if (!findOffer(id)) return; location.hash = "offer/" + id; }
   function handleHash() {
-    const m = (location.hash || "").match(/^#product\/(.+)$/);
-    if (m && findProduct(decodeURIComponent(m[1]))) {
-      currentProductId = decodeURIComponent(m[1]);
+    const hash = location.hash || "";
+    const mp = hash.match(/^#product\/(.+)$/);
+    const mo = hash.match(/^#offer\/(.+)$/);
+    if (mp && findProduct(decodeURIComponent(mp[1]))) {
+      currentProductId = decodeURIComponent(mp[1]);
       const pp = findProduct(currentProductId);
       pp.viewCount = (pp.viewCount || 0) + 1; sbRpc("increment_view", { pid: currentProductId });
       renderProduct(currentProductId);
       $("productScreen").classList.add("open"); $("productScreen").scrollTop = 0;
     } else { currentProductId = null; $("productScreen").classList.remove("open"); }
+    if (mo && findOffer(decodeURIComponent(mo[1]))) {
+      currentOfferId = decodeURIComponent(mo[1]);
+      renderOfferPage(currentOfferId);
+      $("offerScreen").classList.add("open"); $("offerScreen").scrollTop = 0;
+    } else { currentOfferId = null; $("offerScreen").classList.remove("open"); }
+  }
+  /* ---------- offer page: every product included in one offer ---------- */
+  function renderOfferPage(id) {
+    const o = findOffer(id); if (!o) return;
+    const prods = offerProducts(o);
+    const badge = offerBadgeText(o);
+    $("offerBody").innerHTML = `
+      <div class="offer-hero">
+        ${o.image ? `<img src="${esc(o.image)}" alt="" />` : ""}
+        <h1>${esc(o.titleAr||"")}${badge?`<span class="offer-badge">${esc(badge)}</span>`:""}</h1>
+        <p>${esc(offerTypeLabel(o))}</p>
+      </div>
+      <div class="offer-page-grid">
+        ${prods.length
+          ? `<div class="grid">${prods.map(productCardHTML).join("")}</div>`
+          : `<div class="list-empty">لا توجد منتجات في هذا العرض.</div>`}
+      </div>`;
   }
   function miniThumb(img) { return isImgUrl(img) ? `<div class="mini-thumb"><img src="${esc(img)}" alt="" /></div>` : `<div class="mini-thumb">${esc(img||"🛍️")}</div>`; }
   function productRowHTML(key, items) {
@@ -1034,6 +1314,8 @@
     $("setShowPrices").checked = state.settings.showPrices;
     $("setShowBasket").checked = state.settings.showBasket;
     $("setImageFit").value = state.settings.imageFit === "contain" ? "contain" : "cover";
+    $("setStoreStatus").value = state.settings.storeStatus || "auto";
+    $("setOfferRowMax").value = offerRowMax();
     renderAdminDashboard(); renderAdminProducts(); renderAdminCategories(); renderAdminAds(); renderAdminOffers(); renderAdminBranches();
   }
 
@@ -1099,7 +1381,7 @@
     box.innerHTML = state.offers.map((o)=>`
       <div class="list-row">
         <div class="lr-thumb">🎁</div>
-        <div class="lr-main"><div class="lr-name">${esc(o.titleAr||"")}${o.active===false?' · <span style="color:var(--muted)">مخفي</span>':''}${o.showInPopup?' · <span style="color:var(--primary)">نافذة منبثقة</span>':''}</div><div class="lr-sub">${esc(offerTypeLabel(o))}</div></div>
+        <div class="lr-main"><div class="lr-name">${esc(o.titleAr||"")}${o.active===false?' · <span style="color:var(--muted)">مخفي</span>':''}${o.showInPopup?' · <span style="color:var(--primary)">نافذة منبثقة</span>':''}</div><div class="lr-sub">${esc(offerTypeLabel(o))}${(o.productIds||[]).length?` · ${offerMainProducts(o).length}/${(o.productIds||[]).length} في الصفحة الرئيسية`:""}</div></div>
         <div class="lr-actions"><button class="btn btn-ghost btn-sm" data-edit-offer="${esc(o.id)}">تعديل</button><button class="btn btn-danger btn-sm" data-del-offer="${esc(o.id)}">حذف</button></div>
       </div>`).join("");
   }
@@ -1444,8 +1726,15 @@
     const editing = id ? findOffer(id) : null;
     offerUploadedPhoto = editing && editing.image ? editing.image : null;
     const type = editing ? editing.type : "percent_off";
-    const prodChecks = state.products.map((p)=>`
-      <label><input type="checkbox" value="${esc(p.id)}" ${editing && (editing.productIds||[]).includes(p.id)?"checked":""} /> ${esc(prodName(p))}</label>`).join("");
+    const prodChecks = state.products.map((p)=>{
+      const inc = !!(editing && (editing.productIds||[]).includes(p.id));
+      const feat = !!(editing && (editing.featuredProductIds||[]).includes(p.id));
+      return `
+      <div class="of-prod-row">
+        <label class="of-inc"><input type="checkbox" data-of-prod value="${esc(p.id)}" ${inc?"checked":""} /> <span>${esc(prodName(p))}</span></label>
+        <label class="of-feat ${inc?"":"dim"}"><input type="checkbox" data-of-feat value="${esc(p.id)}" ${feat?"checked":""} ${inc?"":"disabled"} /> الصفحة الرئيسية</label>
+      </div>`;
+    }).join("");
     $("formCard").innerHTML = `
       <h3>${editing?"تعديل عرض":"إضافة عرض"}</h3>
       <div class="field"><label>عنوان العرض</label><input id="of_titleAr" value="${editing?esc(editing.titleAr):""}" placeholder="خصم نهاية الأسبوع" /></div>
@@ -1467,6 +1756,7 @@
       </div>
       <div class="field" id="of_products_field"><label>المنتجات المشمولة${type==="min_purchase_discount"?" (اتركها فارغة لتطبيق الخصم على كامل الطلب)":""}</label>
         <div class="check-list" id="of_products">${prodChecks || '<div class="list-empty">لا توجد منتجات بعد.</div>'}</div>
+        <div class="hint">حدّد «الصفحة الرئيسية» للمنتجات التي تظهر في صف العرض بالصفحة الرئيسية؛ الباقي يظهر داخل صفحة العرض عند الضغط على «عرض المزيد». إذا لم تحدد أي منتج تظهر جميع المنتجات في الصف.</div>
       </div>
       <div class="field">
         <label>صورة النافذة المنبثقة (اختياري)</label>
@@ -1485,6 +1775,14 @@
       <div class="check-field"><input type="checkbox" id="of_active" ${!editing || editing.active!==false?"checked":""} /><label for="of_active">العرض مفعّل</label></div>
       <div class="form-actions"><button class="btn btn-ghost" data-form-cancel>إلغاء</button><button class="btn btn-primary" data-save-offer="${editing?esc(editing.id):""}">حفظ</button></div>`;
     setupOfferImageEditor();
+    $("of_products").addEventListener("change", (e)=>{
+      const inc = e.target.closest("[data-of-prod]"); if (!inc) return;
+      const row = inc.closest(".of-prod-row");
+      const featLabel = row.querySelector(".of-feat"), feat = row.querySelector("[data-of-feat]");
+      feat.disabled = !inc.checked;
+      if (!inc.checked) feat.checked = false;
+      featLabel.classList.toggle("dim", !inc.checked);
+    });
     $("of_type").addEventListener("change", (e)=>{
       const v=e.target.value;
       $("of_percent_field").style.display = v==="percent_off"?"":"none";
@@ -1518,7 +1816,8 @@
     const titleAr=$("of_titleAr").value.trim();
     if (!titleAr) { alert("أدخل عنوان العرض"); return; }
     const type=$("of_type").value;
-    const productIds = Array.from(document.querySelectorAll('#of_products input[type=checkbox]:checked')).map((cb)=>cb.value);
+    const productIds = Array.from(document.querySelectorAll('#of_products [data-of-prod]:checked')).map((cb)=>cb.value);
+    const featuredProductIds = Array.from(document.querySelectorAll('#of_products [data-of-feat]:checked')).map((cb)=>cb.value).filter((id)=>productIds.includes(id));
     if ((type==="percent_off" || type==="buy_x_pay_y") && !productIds.length) { alert("اختر منتجًا واحدًا على الأقل"); return; }
     if (type==="buy_x_pay_y") {
       const bx=parseInt($("of_buyX").value), py=parseInt($("of_payY").value);
@@ -1531,7 +1830,7 @@
       payY: type==="buy_x_pay_y" ? (parseInt($("of_payY").value)||0) : null,
       minAmount: type==="min_purchase_discount" ? (parseFloat($("of_minAmount").value)||0) : null,
       discountAmount: type==="min_purchase_discount" ? (parseFloat($("of_discountAmount").value)||0) : null,
-      productIds, image: offerUploadedPhoto || null,
+      productIds, featuredProductIds, image: offerUploadedPhoto || null,
       showInPopup: $("of_popup").checked, active: $("of_active").checked,
     });
     try { if (id) await sbUpdate("offers", id, row); else await sbInsert("offers", row); closeFormModal(); await reload(); }
@@ -1597,11 +1896,14 @@
      INFO SHEET — branches & opening hours (header ℹ️ icon)
      ================================================================ */
   function renderInfoSheet() {
+    const st = storeStatus();
+    const now = new Date();
     $("infoCard").innerHTML = `
       <h3>فروعنا وأوقات العمل</h3>
+      <div class="status-line"><span class="dot st-${st}" style="background:${st==="open"?"#2FBF52":st==="partial"?"#E9B32A":"#E0483C"}"></span>${esc(STORE_STATUS_LABEL[st])}</div>
       ${state.branches.length ? state.branches.map((b)=>`
         <div class="branch-block">
-          <div class="branch-name">${esc(b.nameAr||"")}</div>
+          <div class="branch-name">${esc(b.nameAr||"")} ${state.settings.storeStatus==="auto" ? `<span class="offer-badge" style="background:${branchIsOpenNow(b, now)?"#2FBF52":"#E0483C"}">${branchIsOpenNow(b, now)?"مفتوح":"مغلق"}</span>` : ""}</div>
           ${b.addressAr?`<div class="branch-sub">${esc(b.addressAr)}</div>`:""}
           ${b.phone?`<div class="branch-sub">${esc(b.phone)}</div>`:""}
           <table class="hours-table">
@@ -1624,7 +1926,7 @@
     $("popupCard").innerHTML = `
       <h3>عروض اليوم</h3>
       ${offers.map((o)=>`
-        <div class="popup-offer">
+        <div class="popup-offer" data-offer-open="${esc(o.id)}" style="cursor:pointer">
           ${o.image?`<img src="${esc(o.image)}" alt="" class="popup-offer-img" />`:""}
           <div class="branch-name">${esc(o.titleAr||"")}</div>
           ${offerBadgeText(o)?`<span class="offer-badge">${esc(offerBadgeText(o))}</span>`:""}
@@ -1659,10 +1961,14 @@
   $("tabbar").addEventListener("click", (e)=>{ const tb=e.target.closest(".tab"); if (!tb) return; goToCategory(tb.dataset.target); });
   function handleCardClick(e) {
     const b=e.target.closest("[data-add]"); if (b) { addToCart(b.dataset.add); return; }
-    const o=e.target.closest("[data-open]"); if (o) openProduct(o.dataset.open);
+    const o=e.target.closest("[data-open]"); if (o) { openProduct(o.dataset.open); return; }
+    const of=e.target.closest("[data-offer-open]"); if (of) openOfferPage(of.dataset.offerOpen);
   }
   $("menuRoot").addEventListener("click", handleCardClick);
   $("offersSection").addEventListener("click", handleCardClick);
+  $("offerBody").addEventListener("click", handleCardClick);
+  $("ofBack").addEventListener("click", closeHashScreen);
+  $("ofCart").addEventListener("click", openCart);
   $("cartItems").addEventListener("click", (e)=>{ const inc=e.target.closest("[data-inc]"), dec=e.target.closest("[data-dec]"), rem=e.target.closest("[data-remove]"); if (inc) changeQty(inc.dataset.inc,+1); if (dec) changeQty(dec.dataset.dec,-1); if (rem) removeItem(rem.dataset.remove); });
   $("cartBtn").addEventListener("click", openCart);
   $("closeBtn").addEventListener("click", closeCart);
@@ -1683,7 +1989,11 @@
   $("infoBtn").addEventListener("click", openInfoSheet);
   $("infoCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-close-info]")) closeInfoSheet(); });
   $("infoModal").addEventListener("click", (e)=>{ if (e.target===$("infoModal")) closeInfoSheet(); });
-  $("popupCard").addEventListener("click", (e)=>{ if (e.target.closest("[data-close-popup]")) closePopup(); });
+  $("popupCard").addEventListener("click", (e)=>{
+    if (e.target.closest("[data-close-popup]")) { closePopup(); return; }
+    const of = e.target.closest("[data-offer-open]");
+    if (of) { closePopup(); openOfferPage(of.dataset.offerOpen); }
+  });
   $("popupModal").addEventListener("click", (e)=>{ if (e.target===$("popupModal")) closePopup(); });
 
   document.querySelector(".admin-sidebar").addEventListener("click", (e)=>{ const btn=e.target.closest("[data-tab]"); if (!btn) return; document.querySelectorAll(".admin-sidebar button").forEach((b)=>b.classList.remove("active")); document.querySelectorAll(".admin-pane").forEach((p)=>p.classList.remove("active")); btn.classList.add("active"); $("pane-"+btn.dataset.tab).classList.add("active"); });
@@ -1702,6 +2012,8 @@
   $("setShowPrices").addEventListener("change", updateSettingsFromControls);
   $("setShowBasket").addEventListener("change", updateSettingsFromControls);
   $("setImageFit").addEventListener("change", updateSettingsFromControls);
+  $("setStoreStatus").addEventListener("change", updateSettingsFromControls);
+  $("setOfferRowMax").addEventListener("change", updateSettingsFromControls);
   $("formCard").addEventListener("click", (e)=>{
     if (e.target.closest("[data-form-cancel]")) { closeFormModal(); return; }
     const sp=e.target.closest("[data-save-product]"), sc=e.target.closest("[data-save-category]"), sa=e.target.closest("[data-save-ad]"),
@@ -1732,7 +2044,7 @@
   $("loginSubmit").addEventListener("click", submitLogin);
   $("loginCancel").addEventListener("click", closeLoginModal);
   $("loginPassword").addEventListener("keydown", (e)=>{ if (e.key==="Enter") submitLogin(); });
-  document.addEventListener("keydown", (e)=>{ if (e.key!=="Escape") return; if ($("popupModal").classList.contains("open")) return closePopup(); if ($("infoModal").classList.contains("open")) return closeInfoSheet(); if ($("loginModal").classList.contains("open")) return closeLoginModal(); if ($("formModal").classList.contains("open")) return closeFormModal(); if ($("adminScreen").classList.contains("open")) return closeAdmin(); if ($("cartPanel").classList.contains("open")) return closeCart(); });
+  document.addEventListener("keydown", (e)=>{ if (e.key!=="Escape") return; if ($("popupModal").classList.contains("open")) return closePopup(); if ($("infoModal").classList.contains("open")) return closeInfoSheet(); if ($("loginModal").classList.contains("open")) return closeLoginModal(); if ($("formModal").classList.contains("open")) return closeFormModal(); if ($("adminScreen").classList.contains("open")) return closeAdmin(); if ($("cartPanel").classList.contains("open")) return closeCart(); if ($("offerScreen").classList.contains("open") || $("productScreen").classList.contains("open")) return closeHashScreen(); });
 
   /* ---------- Init ---------- */
   async function boot() {
@@ -1742,7 +2054,7 @@
     applyStaticI18n();
     if (!isConfigured()) { showBoot("setup"); return; }
     showBoot("loading");
-    try { await loadAll(); hideBoot(); renderAll(); handleHash(); maybeShowPopup(); }
+    try { await loadAll(); hideBoot(); renderAll(); handleHash(); maybeShowPopup(); setInterval(renderStoreDot, 60000); }
     catch (e) { showBoot("error", (e && e.message) || "خطأ في الشبكة"); }
   }
   boot();
