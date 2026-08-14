@@ -42,16 +42,16 @@
        --pocket-top: how far the pocket rises into the promo; it must clear the action ring at its
        hover radius. --logo-cx/--logo-cy are the logo circle's centre, which the ring orbits. */
     .top-hero { position:relative; z-index:2; background:none; padding:16px 14px 10px;
-      --pocket-w:160px; --pocket-r:128px; --circle-w:88px; --pill-h:46px;
-      --pocket-top:102px; --act-btn:44px; --logo-lift:58px;
+      --pocket-w:136px; --pocket-r:108px; --circle-w:68px; --pill-h:46px;
+      --pocket-top:82px; --act-btn:38px; --logo-lift:44px;
       /* the pill is the tallest in-flow item, so it sets the row height: it spans 16px..16+--pill-h,
          and the rule sits on its bottom edge. */
       --hero-line-y:calc(16px + var(--pill-h) - 2px);
       /* the action ring: a white band wrapped round the logo, cut into three segments. --ring is the
          band's mid-radius (where the icons sit), --band its thickness. Touch/hover grows all three. */
-      --ring-off:30px; --band-rest:32px; --band-open:50px; --act-ico:1.45rem;
+      --ring-off:24px; --band-rest:26px; --band-open:40px; --act-ico:1.15rem;
       --ring:calc(var(--circle-w) / 2 + var(--ring-off)); --band:var(--band-rest); --act-scale:1; --lbl-op:0;
-      --sc-x:0px; --sc-y:0px; --sc-k:1; --sc-fade:1; --pin-r:66px;
+      --sc-x:0px; --sc-y:0px; --sc-k:1; --sc-fade:1; --pin-r:62px;
       transition:--band .3s cubic-bezier(.34,1.3,.5,1),
                  --act-scale .3s cubic-bezier(.34,1.3,.5,1), --lbl-op .2s ease;
       --logo-cx:calc(12px + var(--circle-w) / 2);
@@ -66,8 +66,8 @@
       inset-inline-start:calc(var(--pocket-w) - 2px); inset-inline-end:0; z-index:0; pointer-events:none; }
     /* circular logo badge on the right of the search bar — it rides up over the promo above it */
     .brand-circle { position:relative; flex:none; width:var(--circle-w); height:var(--circle-w); margin:calc(var(--logo-lift) * -1) -2px -2px; border-radius:50%; background:#fff; display:grid; place-items:center; cursor:pointer; user-select:none; -webkit-user-select:none;
-      border:3px solid #fff; box-shadow:0 6px 18px rgba(0,0,0,.34), 0 0 0 5px rgba(255,255,255,.16); transition:box-shadow .25s ease; }
-    .brand-circle:hover { box-shadow:0 8px 22px rgba(0,0,0,.4), 0 0 0 8px rgba(255,255,255,.22); }
+      border:2px solid #fff; box-shadow:0 5px 14px rgba(0,0,0,.34), 0 0 0 4px rgba(255,255,255,.16); transition:box-shadow .25s ease; }
+    .brand-circle:hover { box-shadow:0 7px 18px rgba(0,0,0,.4), 0 0 0 6px rgba(255,255,255,.22); }
     /* scroll drift: the logo and its ring share one transform so they travel together. --sc-* are
        written by the scroll handler every frame — deliberately NOT transitioned, or the drift would
        lag behind the finger. transform-origin is the logo centre for both (.hero-actions is 0x0). */
@@ -195,8 +195,8 @@
     }
     @media (prefers-reduced-motion:reduce){ .top-hero { transition:none; } }
     @media (max-width:400px){
-      .top-hero { --pocket-w:166px; --pocket-r:48px; --circle-w:72px; --pocket-top:64px; --act-btn:40px; --logo-lift:44px;
-        --ring-off:24px; --band-rest:28px; --band-open:34px; --act-ico:1.3rem; }
+      .top-hero { --pocket-w:120px; --pocket-r:44px; --circle-w:58px; --pocket-top:52px; --act-btn:34px; --logo-lift:36px;
+        --ring-off:20px; --band-rest:23px; --band-open:30px; --act-ico:1.05rem; }
     }
     .icon-btn { flex:none; position:relative; background:#fff; border:none; color:var(--primary); width:44px; height:44px; border-radius:15px; font-size:1.15rem; cursor:pointer; display:grid; place-items:center; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .2s ease, color .2s ease, transform .1s ease; }
     .icon-btn:hover { background:var(--primary); color:#fff; } .icon-btn:active { transform:scale(.93); }
@@ -2168,19 +2168,35 @@
      DRIFT_RANGE larger than that gap is what makes the movement read as slower than the page. */
   (function heroScrollDrift(){
     const anchor = document.querySelector(".logo-anchor");
+    const promoWrap = document.getElementById("promoWrap");
     if (!anchor || !heroEl) return;
-    const PIN_Y = 32, DRIFT_RANGE = 340, MIN_SCALE = .6;
+    // PIN_Y has to clear the badge's own radius AND the upward half of the spring — mid-flight the
+    // logo rises past the pin before settling back, and at MIN_SCALE .85 that peak is the tightest
+    // point against the top edge, not the resting pin position.
+    const PIN_Y = 44, DRIFT_RANGE = 170, MIN_SCALE = .85, OVERSHOOT = 1.1, PROMO_LEAD = 40;
     const clamp = (v,a,b) => v < a ? a : (v > b ? b : v);
-    const smooth = (t) => t * t * (3 - 2 * t);          // ease-in-out, so the pin arrives softly
+    // easeOutBack. Peak overshoot is u*^2*((c+1)u*+c) with u*=-2c/(3(c+1)) — for c=1.1 that is
+    // ~4.5% of the travel, about 9px, peaking near 65% of the scroll range before settling exactly
+    // onto the pin. Drives position AND scale, so the badge dips slightly small and grows back.
+    // f(t) never dips below 1 once it crosses, so the pinned state doesn't flicker.
+    const spring = (t) => { const u = t - 1; return 1 + (OVERSHOOT + 1) * u * u * u + OVERSHOOT * u * u; };
     let queued = false;
     function apply(){
       // the anchor is never transformed, so its rect is always the logo's natural position
       const r = anchor.getBoundingClientRect();
       const sy = window.scrollY;
       const basePageY = r.top + sy, baseX = r.left;
-      const p = smooth(clamp(sy / DRIFT_RANGE, 0, 1));
+      // Hold still until the promo has all but scrolled past, so the logo just rides the page while
+      // the carousel is on screen. Capped at (basePageY - PIN_Y): past that the logo is already
+      // higher than the pin, and starting there would drag it back DOWN as you scroll on.
+      const promoBottom = (promoWrap && promoWrap.offsetParent !== null)
+        ? promoWrap.getBoundingClientRect().bottom + sy : 0;
+      const start = Math.max(0, Math.min(promoBottom - PROMO_LEAD, basePageY - PIN_Y));
+      const p = spring(clamp((sy - start) / DRIFT_RANGE, 0, 1));
       const fade = clamp(1 - (p - .45) / .35, 0, 1);
-      heroEl.style.setProperty("--sc-y", (sy - p * (basePageY - PIN_Y)) + "px");
+      // lerp from the natural position to the pin, so p=0 means NO transform and the logo scrolls
+      // with the page. (The old form baked in a constant sy term and would have frozen it instead.)
+      heroEl.style.setProperty("--sc-y", (p * (PIN_Y - basePageY + sy)) + "px");
       heroEl.style.setProperty("--sc-x", (p * (window.innerWidth / 2 - baseX)) + "px");
       heroEl.style.setProperty("--sc-k", (1 + (MIN_SCALE - 1) * p).toFixed(4));
       heroEl.style.setProperty("--sc-fade", fade.toFixed(3));
